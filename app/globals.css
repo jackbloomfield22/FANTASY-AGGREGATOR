@@ -1,0 +1,184 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+   Fantasy Aggregator design tokens
+   Dark-first "live sports command center" palette. Semantic colors are
+   reserved for meaning (live, red zone, winning, losing); everything else
+   stays neutral.
+--------------------------------------------------------------------------- */
+
+:root {
+  --bg: #07090d;
+  --surface: #0e1219;
+  --surface-2: #151b25;
+  --surface-3: #1c2431;
+  --edge: #1f2733;
+  --edge-strong: #2c3644;
+  --ink: #eef2f7;
+  --ink-dim: #98a3b3;
+  --ink-faint: #5c6675;
+  --accent: #4f7cff;
+  --accent-ink: #ffffff;
+  --live: #ff4d5e;
+  --redzone: #ff3b30;
+  --win: #2fbf71;
+  --loss: #e5484d;
+  --warn: #f5a623;
+  --field: #10331f;
+  --field-line: #2b5c3d;
+}
+
+[data-theme="light"] {
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --surface-2: #f0f2f5;
+  --surface-3: #e7eaef;
+  --edge: #dde1e8;
+  --edge-strong: #c6ccd6;
+  --ink: #121722;
+  --ink-dim: #4d5768;
+  --ink-faint: #8a93a3;
+  --accent: #2f5fe0;
+  --accent-ink: #ffffff;
+  --live: #d92d3d;
+  --redzone: #d7261c;
+  --win: #178f52;
+  --loss: #c73338;
+  --warn: #b97a10;
+  --field: #dcefe2;
+  --field-line: #a5cdb2;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]):not([data-theme="light"]) {
+    --bg: #f4f5f7;
+    --surface: #ffffff;
+    --surface-2: #f0f2f5;
+    --surface-3: #e7eaef;
+    --edge: #dde1e8;
+    --edge-strong: #c6ccd6;
+    --ink: #121722;
+    --ink-dim: #4d5768;
+    --ink-faint: #8a93a3;
+    --accent: #2f5fe0;
+    --accent-ink: #ffffff;
+    --live: #d92d3d;
+    --redzone: #d7261c;
+    --win: #178f52;
+    --loss: #c73338;
+    --warn: #b97a10;
+    --field: #dcefe2;
+    --field-line: #a5cdb2;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-edge: var(--edge);
+  --color-edge-strong: var(--edge-strong);
+  --color-ink: var(--ink);
+  --color-ink-dim: var(--ink-dim);
+  --color-ink-faint: var(--ink-faint);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-live: var(--live);
+  --color-redzone: var(--redzone);
+  --color-win: var(--win);
+  --color-loss: var(--loss);
+  --color-warn: var(--warn);
+  --color-field: var(--field);
+  --color-field-line: var(--field-line);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+html {
+  background: var(--bg);
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* Big score numerals & stat values always align */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Live pulsing dot */
+@keyframes fa-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.8);
+  }
+}
+
+.live-dot {
+  animation: fa-pulse 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-dot {
+    animation: none;
+  }
+}
+
+/* Red-zone card treatment — strong but tasteful */
+.redzone-glow {
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--redzone) 55%, transparent),
+    0 0 24px -6px color-mix(in srgb, var(--redzone) 35%, transparent);
+}
+
+/* Skeleton shimmer */
+@keyframes fa-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton {
+  border-radius: 6px;
+  background: linear-gradient(
+    100deg,
+    var(--surface-2) 40%,
+    var(--surface-3) 50%,
+    var(--surface-2) 60%
+  );
+  background-size: 200% 100%;
+  animation: fa-shimmer 1.4s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
+
+/* Focus visibility */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Hide scrollbars on horizontal chip rows while keeping scrollability */
+.scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--edge-strong) transparent;
+}
