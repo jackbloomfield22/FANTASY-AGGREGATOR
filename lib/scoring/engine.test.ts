@@ -53,6 +53,17 @@ describe("calculateFantasyPoints", () => {
     expect(calculateFantasyPoints(null, SCORING_PRESETS.ppr)).toBe(0);
   });
 
+  it("scores a flat fgm total against bucket-only settings via the conservative fallback", () => {
+    // Live providers may report only a distance-agnostic "fgm"; leagues score
+    // by distance bucket. Each make falls back to the cheapest bucket value.
+    const line: RawStatLine = { fgm: 3, xpm: 2 };
+    // min bucket = 3 -> 3*3 + 2 = 11
+    expect(calculateFantasyPoints(line, SCORING_PRESETS.ppr)).toBe(11);
+    // Bucketed stats still score exactly when present.
+    const bucketed: RawStatLine = { fgm_40_49: 1, fgm_50p: 1, xpm: 2 };
+    expect(calculateFantasyPoints(bucketed, SCORING_PRESETS.ppr)).toBe(11);
+  });
+
   it("handles fumbles and 2pt conversions", () => {
     const line: RawStatLine = { rush_yd: 60, rush_td: 1, rush_2pt: 1, fum_lost: 1 };
     // 6 + 6 + 2 - 2 = 12

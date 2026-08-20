@@ -1,4 +1,5 @@
 import type { PlayerLeagueContext } from "@/lib/types";
+import { round1 } from "@/lib/scoring/engine";
 
 /**
  * Exposure + portfolio impact math. Pure functions, unit tested.
@@ -35,8 +36,4 @@ export function benchPoints(contexts: PlayerLeagueContext[]): number {
 
 export function formatExposure(fraction: number): string {
   return `${Math.round(fraction * 100)}%`;
-}
-
-function round1(n: number): number {
-  return Math.round(n * 10) / 10;
 }

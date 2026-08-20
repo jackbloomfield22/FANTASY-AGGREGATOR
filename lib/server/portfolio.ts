@@ -89,10 +89,12 @@ async function buildSleeperSnapshot(
       playerStats = mapStatsToCanonical(rawStats, sync.players);
       alerts = collectLiveAlerts(username, { games, stats: playerStats }, sync);
     } catch (err) {
-      // Live data failing must never take down the fantasy view.
+      // Live data failing must never take down the fantasy view — but the
+      // snapshot must not claim a live source it doesn't have.
       console.warn("[live] Sportradar refresh failed:", err instanceof Error ? err.message : err);
       games = [];
       playerStats = [];
+      liveSource = "none";
     }
   }
 

@@ -28,11 +28,27 @@ export function calculateFantasyPoints(
   for (const [key, value] of Object.entries(stats)) {
     if (value === undefined || value === 0) continue;
     if (NON_SCORING_KEYS.has(key)) continue;
-    const perUnit = settings[key];
+    let perUnit: number | undefined = settings[key];
+    // Distance-agnostic FG totals (some live providers report only a flat
+    // "fgm") against leagues that score by distance bucket: fall back to the
+    // most conservative bucket value rather than dropping the kicks entirely.
+    if (perUnit === undefined && key === "fgm") {
+      perUnit = flatFgFallback(settings);
+    }
     if (perUnit === undefined || perUnit === 0) continue;
     total += value * perUnit;
   }
   return round1(total);
+}
+
+const FG_BUCKET_KEYS = ["fgm_0_19", "fgm_20_29", "fgm_30_39", "fgm_40_49", "fgm_50p"];
+
+function flatFgFallback(settings: ScoringSettings): number | undefined {
+  const bucketValues = FG_BUCKET_KEYS.map((k) => settings[k]).filter(
+    (v): v is number => v !== undefined && v > 0
+  );
+  if (bucketValues.length === 0) return undefined;
+  return Math.min(...bucketValues);
 }
 
 export function round1(n: number): number {

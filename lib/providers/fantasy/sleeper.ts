@@ -335,11 +335,14 @@ export class SleeperFantasyProvider implements FantasyProvider {
         matchup: SleeperMatchup | undefined,
         roster: SleeperRoster
       ) => {
-        const starters = (matchup?.starters ?? roster.starters ?? []).filter((p) => p && p !== "0");
+        // Keep the raw starters array aligned with roster_positions by index;
+        // empty slots ("0") are skipped without shifting later slot labels.
+        const rawStarters = matchup?.starters ?? roster.starters ?? [];
         const all = (matchup?.players ?? roster.players ?? []).filter((p) => p && p !== "0");
         const points = matchup?.players_points ?? {};
-        const starterSet = new Set(starters);
-        starters.forEach((playerId, i) => {
+        const starterSet = new Set(rawStarters.filter((p) => p && p !== "0"));
+        rawStarters.forEach((playerId, i) => {
+          if (!playerId || playerId === "0") return; // vacant lineup slot
           neededPlayerIds.add(playerId);
           rosterSlots.push({
             id: `ss-${++slotSeq}`,

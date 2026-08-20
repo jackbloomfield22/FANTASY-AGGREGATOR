@@ -1,16 +1,13 @@
 import type {
   MatchupView,
   NormalizedFantasyTeam,
-  NormalizedLeague,
   NormalizedNFLGame,
   NormalizedPlayer,
-  NormalizedRosterSlot,
   PlayerLeagueContext,
   PlayerLiveStatus,
   PortfolioPlayer,
   PortfolioSnapshot,
   RankedGame,
-  RawStatLine,
 } from "@/lib/types";
 import { calculateFantasyPoints, round1 } from "@/lib/scoring/engine";
 import { benchPoints, portfolioImpact, rosterExposure, starterExposure } from "./exposure";
@@ -163,7 +160,10 @@ export function aggregatePortfolio(snapshot: PortfolioSnapshot): AggregatedPortf
         score += stats
           ? calculateFantasyPoints(stats, league.scoringSettings)
           : slot.providerPoints ?? 0;
+        // Bye week / free agent (no game this week): nothing left to play, so
+        // don't count toward "remaining" or block the matchup going final.
         const game = player ? gameByNflTeam.get(player.nflTeam) : undefined;
+        if (!player || (snapshot.games.length > 0 && !game)) continue;
         if (!game || game.status !== "final") {
           allFinal = false;
           remaining += 1;
@@ -270,13 +270,4 @@ export function userTeamForLeague(
   leagueId: string
 ): NormalizedFantasyTeam | undefined {
   return teams.find((t) => t.leagueId === leagueId && t.isUserTeam);
-}
-
-/** Compute league-scored points for an arbitrary roster slot (matchup detail). */
-export function pointsForSlot(
-  slot: NormalizedRosterSlot,
-  league: NormalizedLeague,
-  stats: RawStatLine | null
-): number {
-  return calculateFantasyPoints(stats, league.scoringSettings);
 }
