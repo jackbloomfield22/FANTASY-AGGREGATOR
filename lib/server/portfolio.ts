@@ -13,9 +13,11 @@ import { yahooProvider } from "@/lib/providers/fantasy/yahoo";
 import { sportradarProvider } from "@/lib/providers/live/sportradar";
 import { deriveLiveAlerts, LiveState } from "@/lib/alerts/engine";
 import type { FantasySyncResult } from "@/lib/providers/fantasy/base";
+import { buildSimulatedLiveLayer } from "@/lib/demo/liveSim";
 import {
   getDemoEpochOffsetMs,
   getSleeperConnection,
+  isSimulatedLive,
 } from "./session";
 
 /**
@@ -96,6 +98,14 @@ async function buildSleeperSnapshot(
       playerStats = [];
       liveSource = "none";
     }
+  } else if (await isSimulatedLive()) {
+    // No real live provider: fabricate a deterministic mid-Sunday over the
+    // user's real rosters (clearly badged as simulated in the UI).
+    liveSource = "demo";
+    const sim = buildSimulatedLiveLayer(sync.players, sync.week, Date.now());
+    games = sim.games;
+    playerStats = sim.playerStats;
+    alerts = collectLiveAlerts(`${username}:sim`, { games, stats: playerStats }, sync);
   }
 
   return {

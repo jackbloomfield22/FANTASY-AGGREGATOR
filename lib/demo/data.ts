@@ -702,7 +702,7 @@ export const FEATURED_BASE_STATS: Record<string, RawStatLine> = {
 export const FEATURED_PLAYER_IDS = new Set(Object.keys(FEATURED_BASE_STATS));
 
 /** Generate a plausible full-game line for a non-featured player. */
-function generatedFullLine(playerId: string, pos: Position): RawStatLine {
+export function generatedFullLine(playerId: string, pos: Position): RawStatLine {
   const rand = mulberry32(hashString(playerId));
   const between = (lo: number, hi: number) => Math.round(lo + rand() * (hi - lo));
   const chance = (p: number) => (rand() < p ? 1 : 0);

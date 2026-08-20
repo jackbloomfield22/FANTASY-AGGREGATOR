@@ -14,6 +14,7 @@ import { cookies } from "next/headers";
 export const DEMO_COOKIE = "fa-demo";
 export const DEMO_EPOCH_COOKIE = "fa-demo-epoch";
 export const SLEEPER_COOKIE = "fa-sleeper";
+export const SIM_LIVE_COOKIE = "fa-sim-live";
 
 export interface SleeperConnection {
   username: string;
@@ -33,6 +34,12 @@ export async function getDemoEpochOffsetMs(): Promise<number> {
   const raw = store.get(DEMO_EPOCH_COOKIE)?.value;
   const n = raw ? Number(raw) : 0;
   return Number.isFinite(n) ? n : 0;
+}
+
+/** Simulate a live NFL Sunday over real (Sleeper) rosters when no live provider exists. */
+export async function isSimulatedLive(): Promise<boolean> {
+  const store = await cookies();
+  return store.get(SIM_LIVE_COOKIE)?.value === "1";
 }
 
 export async function getSleeperConnection(): Promise<SleeperConnection | null> {

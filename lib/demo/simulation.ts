@@ -623,7 +623,7 @@ function gameProgress(gameId: string, elapsed: number): number {
 }
 
 /** Scale a full-game stat line down to partial-game progress. */
-function scaleLine(line: RawStatLine, p: number): RawStatLine {
+export function scaleLine(line: RawStatLine, p: number): RawStatLine {
   if (p >= 1) return line;
   if (p <= 0) return {};
   const out: RawStatLine = {};

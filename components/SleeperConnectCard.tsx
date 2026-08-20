@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { usePortfolio } from "@/components/providers/PortfolioProvider";
 import { track } from "@/lib/analytics";
-import { timeAgo } from "@/lib/utils";
+import { cn, timeAgo } from "@/lib/utils";
 
 /**
  * Sleeper connection card: enter a username, sync leagues, manage the
@@ -21,6 +21,25 @@ export function SleeperConnectCard({ onConnected }: { onConnected?: () => void }
 
   const connection = snapshot?.meta.connections.find((c) => c.provider === "sleeper");
   const connected = connection?.status === "connected";
+  const simActive =
+    connected && snapshot?.meta.liveSource === "demo" && snapshot?.meta.fantasySource === "sleeper";
+  const canSimulate = connected && snapshot?.meta.liveSource !== "sportradar";
+
+  const toggleSim = async () => {
+    setBusy("sync");
+    setError(null);
+    try {
+      await fetch("/api/demo/simulate", { method: simActive ? "DELETE" : "POST" });
+      setNotice(
+        simActive
+          ? "Simulation off — back to real data only."
+          : "Simulating a live Sunday over your real rosters. Look for the SIM LIVE badge."
+      );
+      await refresh();
+    } finally {
+      setBusy(null);
+    }
+  };
 
   const connect = async () => {
     setBusy("connect");
@@ -119,6 +138,22 @@ export function SleeperConnectCard({ onConnected }: { onConnected?: () => void }
           >
             Disconnect
           </button>
+          {canSimulate ? (
+            <button
+              type="button"
+              onClick={() => void toggleSim()}
+              disabled={busy !== null}
+              title="No live NFL data provider is configured — fabricate a mid-Sunday (games live, stats moving) over your real rosters so you can see the product in motion."
+              className={cn(
+                "rounded-md border px-3 py-1.5 text-xs font-bold disabled:opacity-50",
+                simActive
+                  ? "border-warn/40 bg-warn/10 text-warn hover:bg-warn/20"
+                  : "border-edge bg-surface-2 text-ink hover:bg-surface-3"
+              )}
+            >
+              {simActive ? "Stop live simulation" : "Simulate live Sunday"}
+            </button>
+          ) : null}
         </div>
       ) : (
         <form
