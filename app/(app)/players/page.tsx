@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import type { PortfolioPlayer } from "@/lib/types";
 import { DataGate } from "@/components/DataGate";
 import { PageHeader } from "@/components/PageHeader";
-import { PlayerCard } from "@/components/PlayerCard";
+import { PlayerListHeader, PlayerListRow } from "@/components/PlayerListRow";
 import { FilterBar, FilterSelect } from "@/components/FilterBar";
 import { EmptyState } from "@/components/ui/states";
 import { StatPill } from "@/components/ui/badges";
@@ -191,9 +191,10 @@ export default function PlayersPage() {
                 message="Try widening the status filter or clearing position/team selections."
               />
             ) : (
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              <div className="space-y-2">
+                <PlayerListHeader />
                 {filtered.map((p) => (
-                  <PlayerCard key={p.player.id} player={p} compact={compact} />
+                  <PlayerListRow key={p.player.id} player={p} compact={compact} />
                 ))}
               </div>
             )}
