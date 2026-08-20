@@ -12,13 +12,18 @@ import { track } from "@/lib/analytics";
 export function EntryGate() {
   const router = useRouter();
   const [username, setUsername] = useState("");
-  const [busy, setBusy] = useState<"connect" | "demo" | null>(null);
+  const [busy, setBusy] = useState<"connect" | "simulate" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const connect = async () => {
-    setBusy("connect");
+  /** Connect the Sleeper account; optionally drop it into a simulated live Sunday. */
+  const enter = async (simulate: boolean) => {
+    if (username.trim().length === 0) {
+      setError("Enter your Sleeper username first.");
+      return;
+    }
+    setBusy(simulate ? "simulate" : "connect");
     setError(null);
-    track("fantasy_connection_started", { provider: "sleeper", from: "entry" });
+    track("fantasy_connection_started", { provider: "sleeper", from: "entry", simulate });
     try {
       const res = await fetch("/api/connections/sleeper", {
         method: "POST",
@@ -30,7 +35,11 @@ export function EntryGate() {
         setError(body.error ?? "Could not connect to Sleeper.");
         return;
       }
-      track("fantasy_connection_completed", { provider: "sleeper", from: "entry" });
+      if (simulate) {
+        track("demo_started", { from: "entry" });
+        await fetch("/api/demo/simulate", { method: "POST" });
+      }
+      track("fantasy_connection_completed", { provider: "sleeper", from: "entry", simulate });
       router.push("/dashboard");
       router.refresh();
     } catch {
@@ -40,20 +49,12 @@ export function EntryGate() {
     }
   };
 
-  const enterDemo = async () => {
-    setBusy("demo");
-    track("demo_started", { from: "entry" });
-    await fetch("/api/demo/enter", { method: "POST" });
-    router.push("/dashboard");
-    router.refresh();
-  };
-
   return (
     <div className="w-full max-w-sm rounded-2xl border border-edge bg-surface p-6 shadow-2xl">
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          void connect();
+          void enter(false);
         }}
       >
         <label htmlFor="sleeper-username" className="block text-left text-xs font-bold uppercase tracking-wider text-ink-dim">
@@ -94,15 +95,16 @@ export function EntryGate() {
 
       <button
         type="button"
-        onClick={() => void enterDemo()}
+        onClick={() => void enter(true)}
         disabled={busy !== null}
-        className="flex w-full items-center justify-center gap-2 rounded-lg border border-edge bg-surface-2 px-4 py-2.5 text-sm font-bold uppercase tracking-wide text-ink hover:bg-surface-3 disabled:opacity-50"
+        className="flex w-full items-center justify-center gap-2 rounded-lg border border-warn/40 bg-warn/10 px-4 py-2.5 text-sm font-bold uppercase tracking-wide text-warn hover:bg-warn/20 disabled:opacity-50"
       >
-        {busy === "demo" ? <Loader2 size={15} className="animate-spin" aria-hidden /> : null}
-        Explore demo mode
+        {busy === "simulate" ? <Loader2 size={15} className="animate-spin" aria-hidden /> : null}
+        Simulate live Sunday
       </button>
       <p className="mt-2 text-center text-[11px] text-ink-faint">
-        No Sleeper account needed — a full simulated Sunday with five leagues.
+        Your real leagues and rosters, dropped into a simulated mid-Sunday — scores, drives and
+        stats all moving.
       </p>
     </div>
   );

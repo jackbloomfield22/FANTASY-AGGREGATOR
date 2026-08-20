@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/PageHeader";
 import { SleeperConnectCard } from "@/components/SleeperConnectCard";
-import { track } from "@/lib/analytics";
 
 function ComingSoonProvider({ name, note }: { name: string; note: string }) {
   return (
@@ -22,13 +21,6 @@ function ComingSoonProvider({ name, note }: { name: string; note: string }) {
 export default function OnboardingPage() {
   const router = useRouter();
 
-  const exploreDemo = async () => {
-    track("demo_started");
-    await fetch("/api/demo/enter", { method: "POST" });
-    router.push("/dashboard");
-    router.refresh();
-  };
-
   return (
     <div className="mx-auto max-w-xl space-y-5">
       <PageHeader
@@ -42,18 +34,12 @@ export default function OnboardingPage() {
       <ComingSoonProvider name="NFL Fantasy" note="Planned after Yahoo." />
 
       <div className="rounded-xl border border-dashed border-edge bg-surface p-4 text-center">
-        <p className="text-sm font-semibold text-ink">Not ready to connect anything?</p>
+        <p className="text-sm font-semibold text-ink">Want to see everything moving?</p>
         <p className="mt-0.5 text-xs text-ink-dim">
-          Explore the full product with a realistic simulated Sunday — five leagues, live games,
-          red-zone alerts.
+          Once Sleeper is connected, hit <strong className="text-warn">Simulate live Sunday</strong>{" "}
+          on the card above — your real rosters, dropped into live games with scores, drives and
+          red-zone moments.
         </p>
-        <button
-          type="button"
-          onClick={() => void exploreDemo()}
-          className="mt-3 rounded-md border border-edge bg-surface-2 px-4 py-2 text-xs font-bold uppercase tracking-wide text-ink hover:bg-surface-3"
-        >
-          Explore with demo data
-        </button>
       </div>
     </div>
   );
