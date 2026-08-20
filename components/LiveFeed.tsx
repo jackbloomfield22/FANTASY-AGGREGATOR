@@ -5,14 +5,15 @@ import type { AlertType, PortfolioAlert } from "@/lib/types";
 import { cn, formatSigned, timeAgo } from "@/lib/utils";
 import { EmptyState } from "@/components/ui/states";
 
-const ALERT_META: Record<AlertType, { label: string; cls: string }> = {
-  touchdown: { label: "TOUCHDOWN", cls: "text-win border-win/40 bg-win/10" },
-  red_zone: { label: "RED ZONE", cls: "text-redzone border-redzone/50 bg-redzone/10" },
-  big_play: { label: "BIG PLAY", cls: "text-accent border-accent/40 bg-accent/10" },
-  game_start: { label: "GAME START", cls: "text-ink-dim border-edge bg-surface-2" },
-  game_final: { label: "GAME FINAL", cls: "text-ink-dim border-edge bg-surface-2" },
-  player_milestone: { label: "MILESTONE", cls: "text-warn border-warn/40 bg-warn/10" },
-  fantasy_lead_change: { label: "LEAD CHANGE", cls: "text-warn border-warn/40 bg-warn/10" },
+const ALERT_META: Record<AlertType, { label: string; cls: string; accent: string }> = {
+  touchdown: { label: "TOUCHDOWN", cls: "text-win border-win/40 bg-win/10", accent: "border-l-win" },
+  red_zone: { label: "RED ZONE", cls: "text-redzone border-redzone/50 bg-redzone/10", accent: "border-l-redzone" },
+  big_play: { label: "BIG PLAY", cls: "text-accent border-accent/40 bg-accent/10", accent: "border-l-accent" },
+  game_start: { label: "GAME START", cls: "text-ink-dim border-edge bg-surface-2", accent: "border-l-edge-strong" },
+  game_final: { label: "GAME FINAL", cls: "text-ink-dim border-edge bg-surface-2", accent: "border-l-edge-strong" },
+  player_milestone: { label: "MILESTONE", cls: "text-warn border-warn/40 bg-warn/10", accent: "border-l-warn" },
+  fantasy_lead_change: { label: "LEAD CHANGE", cls: "text-warn border-warn/40 bg-warn/10", accent: "border-l-warn" },
+  stat_update: { label: "UPDATE", cls: "text-ink-dim border-edge bg-surface-2", accent: "border-l-edge-strong" },
 };
 
 export function AlertCard({ alert, className }: { alert: PortfolioAlert; className?: string }) {
@@ -65,8 +66,10 @@ export function AlertCard({ alert, className }: { alert: PortfolioAlert; classNa
     </>
   );
 
+  // Left accent stripe color-codes the alert type for fast scanning.
   const cls = cn(
-    "block rounded-lg border border-edge bg-surface p-3 transition-colors",
+    "block rounded-lg border border-edge border-l-2 bg-surface p-3 transition-colors",
+    meta.accent,
     alert.playerId && "hover:border-edge-strong",
     className
   );

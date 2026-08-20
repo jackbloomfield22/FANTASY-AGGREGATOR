@@ -196,7 +196,12 @@ export function mapStatsToCanonical(
 // Real-mode alert accumulation (diff consecutive live states per user)
 // ---------------------------------------------------------------------------
 
-const liveStateStore = new Map<string, { prev: LiveState; alerts: PortfolioAlert[] }>();
+// Player-first feed: keep ONE entry per player — his latest point-moving
+// event — so the feed reads "what has each of my players just done".
+const liveStateStore = new Map<
+  string,
+  { prev: LiveState; byPlayer: Map<string, PortfolioAlert> }
+>();
 
 function collectLiveAlerts(
   userKey: string,
@@ -206,19 +211,28 @@ function collectLiveAlerts(
   const entry = liveStateStore.get(userKey);
   const userTeamIds = new Set(sync.teams.filter((t) => t.isUserTeam).map((t) => t.id));
   const userSlots = sync.rosterSlots.filter((s) => userTeamIds.has(s.fantasyTeamId));
-  let alerts: PortfolioAlert[] = entry?.alerts ?? [];
+  const byPlayer = entry?.byPlayer ?? new Map<string, PortfolioAlert>();
   if (entry) {
     const fresh = deriveLiveAlerts(entry.prev, next, {
       players: sync.players,
       userSlots,
       leagues: sync.leagues,
     });
-    alerts = [...fresh.reverse(), ...alerts].slice(0, 30);
+    for (const alert of fresh) {
+      if (!alert.playerId) continue;
+      const existing = byPlayer.get(alert.playerId);
+      // A touchdown shouldn't be instantly overwritten by a trivial update.
+      const rank = (a: PortfolioAlert) => (a.type === "touchdown" ? 2 : a.type === "big_play" ? 1 : 0);
+      if (existing && rank(existing) > rank(alert) && Date.now() - new Date(existing.at).getTime() < 120_000) {
+        continue;
+      }
+      byPlayer.set(alert.playerId, alert);
+    }
   }
-  liveStateStore.set(userKey, { prev: next, alerts });
+  liveStateStore.set(userKey, { prev: next, byPlayer });
   if (liveStateStore.size > 500) {
     const firstKey = liveStateStore.keys().next().value;
     if (firstKey) liveStateStore.delete(firstKey);
   }
-  return alerts;
+  return [...byPlayer.values()].sort((a, b) => b.at.localeCompare(a.at)).slice(0, 25);
 }

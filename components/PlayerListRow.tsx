@@ -91,7 +91,7 @@ export function PlayerListRow({
   return (
     <article
       className={cn(
-        "relative rounded-lg border border-edge bg-surface px-4 transition-colors hover:border-edge-strong",
+        "relative rounded-lg border border-edge bg-surface px-4 transition-colors hover:border-edge-strong hover:bg-surface-2/60",
         compact ? "py-2" : "py-3",
         isRedZone && "redzone-glow",
         className

@@ -71,11 +71,6 @@ export function PlayerCard({
 
       <div className="flex flex-wrap items-center gap-1.5">
         <StatPill
-          label="Fantasy"
-          value={formatPoints(player.maxPoints)}
-          title="Best single-league fantasy score for this player right now."
-        />
-        <StatPill
           label="Portfolio"
           value={formatSigned(player.portfolioImpact)}
           tone={player.portfolioImpact > 0 ? "win" : "default"}
@@ -88,8 +83,8 @@ export function PlayerCard({
             title="Points scored in leagues where this player is on your bench (not counted in Portfolio Impact)."
           />
         ) : null}
-        <ExposureBadge count={player.rosteredCount} total={player.totalLeagues} kind="roster" />
         <ExposureBadge count={player.starterCount} total={player.totalLeagues} kind="starter" />
+        <ExposureBadge count={player.rosteredCount} total={player.totalLeagues} kind="roster" />
       </div>
 
       {!compact ? (

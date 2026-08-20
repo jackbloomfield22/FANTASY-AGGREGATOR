@@ -42,7 +42,8 @@ export function StatusBadge({
         className
       )}
     >
-      {s.dot ? <span aria-hidden className="live-dot inline-block h-1 w-1 rounded-full bg-current" /> : null}
+      {/* static dot — pulsing is reserved for the single header LIVE indicator */}
+      {s.dot ? <span aria-hidden className="inline-block h-1 w-1 rounded-full bg-current" /> : null}
       {s.label}
     </span>
   );

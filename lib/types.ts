@@ -206,7 +206,8 @@ export type AlertType =
   | "game_start"
   | "game_final"
   | "player_milestone"
-  | "fantasy_lead_change";
+  | "fantasy_lead_change"
+  | "stat_update";
 
 export interface LeagueImpact {
   leagueId: string;

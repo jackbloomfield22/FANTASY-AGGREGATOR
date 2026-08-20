@@ -95,12 +95,12 @@ export function MiniFootballField({
           className="fill-ink-faint"
           opacity={ballX + 22 < EZ + FIELD ? 1 : 0}
         />
-        {/* ball marker */}
+        {/* ball marker (static — no animation) */}
         <circle
           cx={ballX}
           cy={H / 2 - 3}
           r={4.5}
-          className={cn(inRedZone ? "fill-redzone" : "fill-ink", inRedZone && "live-dot")}
+          className={inRedZone ? "fill-redzone" : "fill-ink"}
           stroke="var(--bg)"
           strokeWidth={1.5}
         />
