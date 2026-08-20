@@ -166,9 +166,6 @@ export function aggregatePortfolio(snapshot: PortfolioSnapshot): AggregatedPortf
         const game = player ? gameByNflTeam.get(player.nflTeam) : undefined;
         if (!game || game.status !== "final") {
           allFinal = false;
-          if (!game || game.status !== "live") {
-            // scheduled/halftime players still count as remaining
-          }
           remaining += 1;
         }
       }
