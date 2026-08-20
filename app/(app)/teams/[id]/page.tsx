@@ -101,7 +101,9 @@ function LineupTable({ title, rows }: { title: string; rows: LineupRow[] }) {
                 {r.gameLabel} · {r.statLine}
               </p>
             </div>
-            <StatusBadge status={r.status} className="hidden sm:inline-flex" />
+            <span className="hidden sm:inline-flex">
+              <StatusBadge status={r.status} />
+            </span>
             <span className="tnum w-12 shrink-0 text-right text-sm font-bold text-ink">
               {formatPoints(r.points)}
             </span>

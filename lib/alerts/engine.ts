@@ -107,8 +107,9 @@ export function deriveLiveAlerts(
     if (Object.keys(delta).length === 0) continue;
 
     const impacts = impactsFor(entry.playerId, delta);
-    // Only surface changes that actually moved fantasy points somewhere.
-    if (!impacts.some((i) => Math.abs(i.points) >= 0.5)) continue;
+    // Any change that moved fantasy points at all qualifies (0.05 guards
+    // against floating-point dust only).
+    if (!impacts.some((i) => Math.abs(i.points) >= 0.05)) continue;
     const portfolioImpact = round1(
       impacts.filter((i) => i.isStarter).reduce((sum, i) => sum + i.points, 0)
     );

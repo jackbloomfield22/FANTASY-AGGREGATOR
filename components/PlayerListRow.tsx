@@ -120,7 +120,10 @@ export function PlayerListRow({
         {/* GAME */}
         <div className="min-w-0">
           <div className="mb-0.5 flex items-center gap-1.5">
-            <StatusBadge status={player.liveStatus} className="hidden md:inline-flex" />
+            {/* wrapper handles responsive hiding — the badge's own display class would win over `hidden` */}
+            <span className="hidden md:inline-flex">
+              <StatusBadge status={player.liveStatus} />
+            </span>
             <span className="tnum truncate text-[11px] font-medium text-ink-dim">
               {game
                 ? game.status === "scheduled"

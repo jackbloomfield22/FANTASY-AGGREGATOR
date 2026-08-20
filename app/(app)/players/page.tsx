@@ -6,6 +6,7 @@ import { DataGate } from "@/components/DataGate";
 import { PageHeader } from "@/components/PageHeader";
 import { PlayerListHeader, PlayerListRow } from "@/components/PlayerListRow";
 import { FilterBar, FilterSelect } from "@/components/FilterBar";
+import { ActivityTicker } from "@/components/ActivityTicker";
 import { EmptyState } from "@/components/ui/states";
 import { StatPill } from "@/components/ui/badges";
 import { track } from "@/lib/analytics";
@@ -92,7 +93,7 @@ export default function PlayersPage() {
 
   return (
     <DataGate>
-      {(portfolio) => {
+      {(portfolio, snapshot) => {
         const { players } = portfolio;
         const counts = {
           all: players.length,
@@ -134,6 +135,15 @@ export default function PlayersPage() {
                 </span>
               }
             />
+
+            <section aria-label="Live activity ticker">
+              <div className="mb-1.5 flex items-center justify-between">
+                <h2 className="text-[10px] font-bold tracking-[0.14em] text-ink-faint">
+                  LIVE ACTIVITY
+                </h2>
+              </div>
+              <ActivityTicker alerts={snapshot.alerts} limit={12} />
+            </section>
 
             <div className="sticky top-0 z-20 -mx-4 space-y-2 border-b border-edge bg-bg/95 px-4 py-2 backdrop-blur md:top-auto md:z-auto md:mx-0 md:border-0 md:bg-transparent md:px-0 md:backdrop-blur-none">
               <FilterBar
