@@ -3,14 +3,17 @@
 import Link from "next/link";
 import { DataGate } from "@/components/DataGate";
 import { PortfolioSummary } from "@/components/PortfolioSummary";
+import { MatchupStrip } from "@/components/MatchupStrip";
 import { ImportantGameCard } from "@/components/NFLGameCard";
 import { PlayerCard } from "@/components/PlayerCard";
 import { LiveFeed } from "@/components/LiveFeed";
-import { WinProbability } from "@/components/FantasyMatchupCard";
-import { MatchupStatusBadge } from "@/components/ui/badges";
 import { EmptyState } from "@/components/ui/states";
-import { cn, formatPoints, kickoffLabel } from "@/lib/utils";
+import { kickoffLabel } from "@/lib/utils";
 
+/**
+ * Your Sunday, in reading order:
+ *   the four numbers → am I winning? → what's happening → the game to watch.
+ */
 export default function DashboardPage() {
   return (
     <DataGate>
@@ -35,17 +38,22 @@ export default function DashboardPage() {
               </p>
             ) : null}
 
+            {matchups.length > 0 ? (
+              <section aria-label="Your matchups">
+                <div className="mb-1.5 flex items-center justify-between">
+                  <h2 className="text-[11px] font-bold tracking-[0.14em] text-ink-faint">
+                    AM I WINNING?
+                  </h2>
+                  <Link href="/teams" className="text-[11px] font-semibold text-accent hover:underline">
+                    All matchups →
+                  </Link>
+                </div>
+                <MatchupStrip matchups={matchups} />
+              </section>
+            ) : null}
+
             <div className="grid gap-4 lg:grid-cols-3">
               <div className="order-2 space-y-4 lg:order-1 lg:col-span-2">
-                {biggestSwing ? (
-                  <section aria-label="Biggest swing player">
-                    <h2 className="mb-2 text-[11px] font-bold tracking-[0.14em] text-ink-faint">
-                      BIGGEST SWING
-                    </h2>
-                    <PlayerCard player={biggestSwing} />
-                  </section>
-                ) : null}
-
                 <section aria-label="Live activity">
                   <div className="mb-2 flex items-center justify-between">
                     <h2 className="text-[11px] font-bold tracking-[0.14em] text-ink-faint">
@@ -65,52 +73,17 @@ export default function DashboardPage() {
                 ) : (
                   <EmptyState
                     title="No NFL games with your players"
-                    message="Once games are scheduled for your rostered players, the most important one shows here."
+                    message="Once games involve your rostered players, the most important one shows here."
                   />
                 )}
-
-                <section
-                  aria-label="Matchup summary"
-                  className="rounded-xl border border-edge bg-surface p-4"
-                >
-                  <div className="mb-3 flex items-center justify-between">
-                    <h2 className="text-[11px] font-bold tracking-[0.14em] text-ink-faint">MATCHUPS</h2>
-                    <Link href="/teams" className="text-[11px] font-semibold text-accent hover:underline">
-                      All →
-                    </Link>
-                  </div>
-                  {matchups.length === 0 ? (
-                    <p className="text-sm text-ink-dim">No matchups this week.</p>
-                  ) : (
-                    <ul className="space-y-3">
-                      {matchups.map((m) => (
-                        <li key={m.matchup.id}>
-                          <Link href={`/teams/${m.matchup.id}`} className="group block">
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="truncate text-xs font-semibold text-ink-dim group-hover:text-ink">
-                                {m.league.name}
-                              </span>
-                              <MatchupStatusBadge
-                                status={m.matchup.status}
-                                won={m.matchup.status === "final" ? m.matchup.userScore > m.matchup.opponentScore : undefined}
-                              />
-                            </div>
-                            <p className="tnum mt-0.5 text-sm font-bold text-ink">
-                              {formatPoints(m.matchup.userScore)}
-                              <span className="mx-1 text-ink-faint">—</span>
-                              <span className={cn(m.matchup.opponentScore > m.matchup.userScore && "text-ink")}>
-                                {formatPoints(m.matchup.opponentScore)}
-                              </span>
-                            </p>
-                            {m.matchup.status !== "final" && m.matchup.winProbability !== null ? (
-                              <WinProbability probability={m.matchup.winProbability} className="mt-1" />
-                            ) : null}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </section>
+                {biggestSwing ? (
+                  <section aria-label="Biggest swing player">
+                    <h2 className="mb-2 text-[11px] font-bold tracking-[0.14em] text-ink-faint">
+                      BIGGEST SWING
+                    </h2>
+                    <PlayerCard player={biggestSwing} />
+                  </section>
+                ) : null}
               </div>
             </div>
           </div>

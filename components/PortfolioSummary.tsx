@@ -54,14 +54,20 @@ export function PortfolioSummary({
           {anyLive ? <LiveIndicator label={`${summary.gamesLive} LIVE`} /> : <span>No games live</span>}
         </div>
       </div>
-      <div className="grid grid-cols-3 gap-x-4 gap-y-3 sm:grid-cols-4 lg:grid-cols-7">
-        <Stat value={summary.leagues} label="Leagues" />
-        <Stat value={summary.uniquePlayers} label="Unique players" />
-        <Stat value={summary.startingSomewhere} label="Starting" />
-        <Stat value={summary.liveNow} label="Playing now" tone={summary.liveNow > 0 ? "live" : undefined} />
-        <Stat value={summary.projectedWins} label="Proj. wins" tone="win" />
-        <Stat value={summary.projectedLosses} label="Proj. losses" tone={summary.projectedLosses > 0 ? "loss" : undefined} />
+      {/* Four numbers only — playing now, record, points, leagues. */}
+      <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
+        <Stat
+          value={summary.liveNow}
+          label="Playing now"
+          tone={summary.liveNow > 0 ? "live" : undefined}
+        />
+        <Stat
+          value={`${summary.projectedWins}–${summary.projectedLosses}`}
+          label="Proj. record"
+          tone={summary.projectedWins >= summary.projectedLosses ? "win" : "loss"}
+        />
         <Stat value={formatPoints(summary.totalStartingPoints)} label="Starting pts" />
+        <Stat value={summary.leagues} label="Leagues" />
       </div>
     </section>
   );

@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import { ChevronDown } from "lucide-react";
 import type { PortfolioPlayer } from "@/lib/types";
 import { cn, formatPoints, formatSigned, gamePhaseLabel, kickoffLabel } from "@/lib/utils";
 import { StatusBadge } from "@/components/ui/badges";
@@ -9,210 +11,164 @@ import { LeagueChip } from "@/components/LeagueChip";
 import { MiniFootballField } from "@/components/MiniFootballField";
 
 /**
- * Full-width, column-aligned player row for the Players page.
+ * One clean line per player, built to answer two questions at a glance:
+ * is he playing right now, and how many points is he getting me?
  *
- * One row = one canonical player. Columns line up across rows so the list
- * scans like a scoreboard: WHO | GAME | DOING | WHERE YOU OWN HIM | IMPACT.
+ *   [ Name · pos/team ]  [ status + game ]  [ stat line ]  [ POINTS ]
+ *
+ * Tap the row to expand per-league detail (chips, exposure, mini field).
+ * The name itself links to the full player page.
  */
-
-const GRID =
-  "md:grid md:grid-cols-[minmax(160px,210px)_170px_minmax(170px,1fr)_minmax(200px,1fr)_150px] md:items-center md:gap-x-5";
-
-export function PlayerListHeader() {
-  return (
-    <div
-      aria-hidden
-      className={cn(
-        GRID,
-        "hidden border-b border-edge px-4 pb-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-ink-faint"
-      )}
-    >
-      <span>Player</span>
-      <span>Game</span>
-      <span>Live stats</span>
-      <span>Your leagues</span>
-      <span className="text-right">Portfolio</span>
-    </div>
-  );
-}
-
-/** 5-dot exposure meter: filled = leagues where the condition holds. */
-function ExposureDots({
-  label,
-  count,
-  total,
-  tone,
-  title,
-}: {
-  label: string;
-  count: number;
-  total: number;
-  tone: "win" | "dim";
-  title: string;
-}) {
-  return (
-    <span className="flex items-center justify-end gap-1.5" title={title}>
-      <span className="text-[9px] font-bold tracking-wider text-ink-faint">{label}</span>
-      {total <= 8 ? (
-        <span className="flex gap-[3px]" aria-hidden>
-          {Array.from({ length: total }).map((_, i) => (
-            <span
-              key={i}
-              className={cn(
-                "h-1.5 w-1.5 rounded-full",
-                i < count ? (tone === "win" ? "bg-win" : "bg-ink-dim") : "bg-surface-3"
-              )}
-            />
-          ))}
-        </span>
-      ) : null}
-      <span className="tnum text-[11px] font-bold text-ink">
-        {count}/{total}
-      </span>
-    </span>
-  );
-}
-
 export function PlayerListRow({
   player,
-  compact = false,
   className,
 }: {
   player: PortfolioPlayer;
-  compact?: boolean;
   className?: string;
 }) {
+  const [open, setOpen] = useState(false);
   const { player: p, game } = player;
   const isRedZone = player.liveStatus === "red_zone";
   const isLive = isRedZone || player.liveStatus === "live" || player.liveStatus === "halftime";
   const hasBall = game && isLive && game.possessionTeam === p.nflTeam;
   const opponent = game ? (game.homeTeam === p.nflTeam ? `vs ${game.awayTeam}` : `@ ${game.homeTeam}`) : null;
+  const showDash = player.portfolioImpact === 0 && player.benchPoints === 0 && !isLive && player.liveStatus !== "final";
 
   return (
-    <article
+    <div
       className={cn(
-        "relative rounded-lg border border-edge bg-surface px-4 transition-colors hover:border-edge-strong hover:bg-surface-2/60",
-        compact ? "py-2" : "py-3",
+        "rounded-lg border border-edge bg-surface transition-colors",
+        open ? "border-edge-strong" : "hover:border-edge-strong",
         isRedZone && "redzone-glow",
         className
       )}
     >
-      <div className={cn(GRID, "flex flex-col gap-2")}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="grid w-full grid-cols-[1fr_auto] items-center gap-x-3 px-3.5 py-2.5 text-left md:grid-cols-[minmax(170px,230px)_150px_1fr_auto] md:gap-x-5"
+      >
         {/* WHO */}
-        <div className="flex items-center justify-between gap-2 md:block">
-          <div className="min-w-0">
+        <span className="min-w-0">
+          <span className="flex items-center gap-1.5">
             <Link
               href={`/players/${p.id}`}
-              className="block truncate text-sm font-bold text-ink hover:text-accent"
+              onClick={(e) => e.stopPropagation()}
+              className="truncate text-sm font-bold text-ink hover:text-accent"
             >
               {p.fullName}
-              <span className="absolute inset-0" aria-hidden />
             </Link>
-            <p className="text-[11px] font-medium text-ink-dim">
-              {p.position} · {p.nflTeam}
-              {opponent ? <span className="text-ink-faint"> {opponent}</span> : null}
-            </p>
-          </div>
-          {/* status shows here on mobile, in the game column on desktop */}
-          <StatusBadge status={player.liveStatus} className="md:hidden" />
-        </div>
-
-        {/* GAME */}
-        <div className="min-w-0">
-          <div className="mb-0.5 flex items-center gap-1.5">
-            {/* wrapper handles responsive hiding — the badge's own display class would win over `hidden` */}
-            <span className="hidden md:inline-flex">
-              <StatusBadge status={player.liveStatus} />
+            {player.starterCount > 0 ? (
+              <span className="shrink-0 rounded border border-win/40 bg-win/10 px-1 py-px text-[8px] font-bold tracking-wider text-win">
+                START{player.starterCount > 1 ? ` ×${player.starterCount}` : ""}
+              </span>
+            ) : (
+              <span className="shrink-0 rounded border border-edge bg-surface-2 px-1 py-px text-[8px] font-bold tracking-wider text-ink-faint">
+                BENCH
+              </span>
+            )}
+          </span>
+          <span className="block truncate text-[11px] font-medium text-ink-dim">
+            {p.position} · {p.nflTeam}
+            {opponent ? ` ${opponent}` : ""}
+            <span className="md:hidden">
+              {game
+                ? ` · ${game.status === "scheduled" ? kickoffLabel(game.kickoffAt) : gamePhaseLabel(game)}`
+                : ""}
+              {isRedZone ? " · " : ""}
+              {isRedZone ? <span className="font-bold text-redzone">RED ZONE</span> : null}
             </span>
+          </span>
+        </span>
+
+        {/* GAME (desktop) */}
+        <span className="hidden min-w-0 md:block">
+          <span className="flex items-center gap-1.5">
+            <StatusBadge status={player.liveStatus} />
             <span className="tnum truncate text-[11px] font-medium text-ink-dim">
               {game
                 ? game.status === "scheduled"
                   ? kickoffLabel(game.kickoffAt)
                   : game.status === "live"
-                    ? gamePhaseLabel(game) // the badge already says FINAL / HALF
+                    ? gamePhaseLabel(game)
                     : ""
-                : "No game this week"}
+                : "No game"}
             </span>
-          </div>
+          </span>
           {game && game.status !== "scheduled" ? (
-            <p className="tnum whitespace-nowrap text-sm font-bold leading-tight text-ink">
+            <span className="tnum block whitespace-nowrap text-xs font-bold leading-tight text-ink">
               {game.awayTeam} {game.awayScore}
               <span className="mx-1 text-ink-faint">—</span>
               {game.homeTeam} {game.homeScore}
-            </p>
-          ) : null}
-          {hasBall ? (
-            <p className={cn("text-[10px] font-bold tracking-wide", isRedZone ? "text-redzone" : "text-ink-dim")}>
-              {p.nflTeam} BALL{isRedZone ? " · RED ZONE" : ""}
-            </p>
-          ) : null}
-        </div>
-
-        {/* DOING */}
-        <div className="min-w-0">
-          <p className="tnum truncate text-xs font-medium text-ink" title={statLineText(p.position, player.stats)}>
-            {statLineText(p.position, player.stats)}
-          </p>
-          {!compact && isRedZone && game ? (
-            <MiniFootballField game={game} compact className="mt-1.5 max-w-[280px]" />
-          ) : null}
-        </div>
-
-        {/* WHERE YOU OWN HIM */}
-        <div className="relative z-10 flex flex-wrap items-center gap-1.5">
-          {compact ? (
-            <span className="text-[11px] font-medium text-ink-dim">
-              {player.starterCount > 0 ? `Starting ×${player.starterCount}` : "Bench only"}
-              {player.rosteredCount > player.starterCount
-                ? ` · Bench ×${player.rosteredCount - player.starterCount}`
-                : ""}
+              {hasBall ? (
+                <span className={cn("ml-1.5 text-[9px] font-bold tracking-wide", isRedZone ? "text-redzone" : "text-ink-dim")}>
+                  BALL
+                </span>
+              ) : null}
             </span>
-          ) : (
-            player.leagues.map((ctx) => <LeagueChip key={ctx.leagueId} context={ctx} />)
-          )}
-        </div>
+          ) : null}
+        </span>
 
-        {/* IMPACT */}
-        <div className="flex items-center justify-between gap-3 md:block md:text-right">
-          <div>
-            <p
+        {/* DOING (desktop) */}
+        <span
+          className="tnum hidden truncate text-xs font-medium text-ink-dim md:block"
+          title={statLineText(p.position, player.stats)}
+        >
+          {statLineText(p.position, player.stats)}
+        </span>
+
+        {/* POINTS */}
+        <span className="flex items-center gap-2 justify-self-end">
+          <span className="text-right">
+            <span
               className={cn(
-                "tnum text-lg font-black leading-none",
+                "tnum block text-lg font-black leading-none",
                 player.portfolioImpact > 0 ? "text-win" : "text-ink-faint"
               )}
-              title="Portfolio Impact — the fantasy points this player has generated across every lineup where you're starting him this week."
+              title="Portfolio Impact — points this player is scoring you across every lineup where he starts."
             >
-              {player.portfolioImpact === 0 && player.liveStatus === "upcoming"
-                ? "—"
-                : formatSigned(player.portfolioImpact)}
-            </p>
+              {showDash ? "—" : formatSigned(player.portfolioImpact)}
+            </span>
             {player.benchPoints > 0 ? (
-              <p
-                className="tnum text-[10px] font-medium text-ink-faint"
-                title="Points scored in leagues where he's on your bench (not counted above)."
-              >
-                bench {formatPoints(player.benchPoints)}
-              </p>
+              <span className="tnum block text-[9px] font-medium text-ink-faint">
+                +{formatPoints(player.benchPoints)} bench
+              </span>
             ) : null}
+          </span>
+          <ChevronDown
+            size={14}
+            aria-hidden
+            className={cn("shrink-0 text-ink-faint transition-transform", open && "rotate-180")}
+          />
+        </span>
+      </button>
+
+      {open ? (
+        <div className="space-y-2.5 border-t border-edge px-3.5 py-3">
+          <p className="tnum text-xs font-medium text-ink-dim md:hidden">
+            {statLineText(p.position, player.stats)}
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {player.leagues.map((ctx) => (
+              <LeagueChip key={ctx.leagueId} context={ctx} />
+            ))}
           </div>
-          <div className="flex flex-col gap-0.5 md:mt-1">
-            <ExposureDots
-              label="START"
-              count={player.starterCount}
-              total={player.totalLeagues}
-              tone="win"
-              title="Starter Exposure — leagues where this player is in your starting lineup."
-            />
-            <ExposureDots
-              label="OWN"
-              count={player.rosteredCount}
-              total={player.totalLeagues}
-              tone="dim"
-              title="Roster Exposure — leagues where you roster this player."
-            />
-          </div>
+          <p className="tnum text-[11px] text-ink-faint">
+            Starting in {player.starterCount} of {player.totalLeagues} leagues · rostered in{" "}
+            {player.rosteredCount} of {player.totalLeagues}
+          </p>
+          {isLive && game && game.ballYardLine !== null ? (
+            <MiniFootballField game={game} compact className="max-w-[320px]" />
+          ) : null}
+          <Link
+            href={`/players/${p.id}`}
+            className="inline-block text-[11px] font-semibold text-accent hover:underline"
+          >
+            Full player detail →
+          </Link>
         </div>
-      </div>
-    </article>
+      ) : null}
+    </div>
   );
 }
