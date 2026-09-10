@@ -50,6 +50,7 @@ export function aggregatePortfolio(snapshot: PortfolioSnapshot): AggregatedPortf
   const teamById = new Map(snapshot.fantasyTeams.map((t) => [t.id, t]));
   const playerById = new Map(snapshot.players.map((p) => [p.id, p]));
   const statsByPlayer = new Map(snapshot.playerStats.map((s) => [s.playerId, s]));
+  const projByPlayer = new Map((snapshot.projections ?? []).map((s) => [s.playerId, s]));
   const gameByNflTeam = new Map<string, NormalizedNFLGame>();
   for (const g of snapshot.games) {
     gameByNflTeam.set(g.homeTeam, g);
@@ -73,6 +74,7 @@ export function aggregatePortfolio(snapshot: PortfolioSnapshot): AggregatedPortf
     const player = playerById.get(slot.playerId);
     if (!player) continue;
     const stats = statsByPlayer.get(slot.playerId)?.stats ?? null;
+    const projLine = projByPlayer.get(slot.playerId)?.stats ?? null;
     const ctx: PlayerLeagueContext = {
       leagueId: league.id,
       leagueName: league.name,
@@ -82,6 +84,9 @@ export function aggregatePortfolio(snapshot: PortfolioSnapshot): AggregatedPortf
       points: stats
         ? calculateFantasyPoints(stats, league.scoringSettings)
         : slot.providerPoints ?? 0,
+      projectedPoints: projLine
+        ? round1(calculateFantasyPoints(projLine, league.scoringSettings))
+        : null,
     };
     const list = contextsByPlayer.get(slot.playerId);
     if (list) list.push(ctx);
@@ -107,9 +112,15 @@ export function aggregatePortfolio(snapshot: PortfolioSnapshot): AggregatedPortf
       rosterExposure: rosterExposure(contexts.length, totalLeagues),
       starterExposure: starterExposure(starterCount, totalLeagues),
       portfolioImpact: portfolioImpact(contexts),
+      projectedImpact: round1(
+        contexts.reduce((s, c) => s + (c.isStarter ? c.projectedPoints ?? 0 : 0), 0)
+      ),
       benchPoints: benchPoints(contexts),
       maxPoints: contexts.reduce((m, c) => Math.max(m, c.points), 0),
-      liveStatus: playerLiveStatus(game, player),
+      liveStatus: playerLiveStatus(game, player, {
+        hasSchedule: snapshot.games.length > 0,
+        hasStats: stats !== null,
+      }),
     });
   }
   players.sort((a, b) => b.portfolioImpact - a.portfolioImpact);
@@ -221,7 +232,7 @@ export function aggregatePortfolio(snapshot: PortfolioSnapshot): AggregatedPortf
     liveNow: players.filter((p) => p.liveStatus === "live" || p.liveStatus === "red_zone").length,
     inRedZone: players.filter((p) => p.liveStatus === "red_zone").length,
     playingLater: players.filter((p) => p.liveStatus === "upcoming").length,
-    finished: players.filter((p) => p.liveStatus === "final").length,
+    finished: players.filter((p) => p.liveStatus === "final" || p.liveStatus === "played").length,
     gamesLive: snapshot.games.filter((g) => g.status === "live" || g.status === "halftime").length,
     projectedWins: matchups.filter(
       (m) => m.matchup.status === "winning" || (m.matchup.status === "final" && m.matchup.userScore > m.matchup.opponentScore)
@@ -249,9 +260,16 @@ export function aggregatePortfolio(snapshot: PortfolioSnapshot): AggregatedPortf
 
 export function playerLiveStatus(
   game: NormalizedNFLGame | null,
-  player: NormalizedPlayer
+  player: NormalizedPlayer,
+  /** When the schedule feed is down entirely, stats presence still tells an
+   *  honest story: points on the board = has played (or is playing), nothing
+   *  yet = still waiting. Only used when `game` is null. */
+  fallback?: { hasSchedule: boolean; hasStats: boolean }
 ): PlayerLiveStatus {
-  if (!game) return "no_game";
+  if (!game) {
+    if (fallback && !fallback.hasSchedule) return fallback.hasStats ? "played" : "upcoming";
+    return "no_game";
+  }
   switch (game.status) {
     case "scheduled":
       return "upcoming";

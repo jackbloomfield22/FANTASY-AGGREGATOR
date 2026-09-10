@@ -9,6 +9,7 @@ const ctx = (leagueId: string, isStarter: boolean, points: number): PlayerLeague
   isStarter,
   slot: isStarter ? "WR" : "BN",
   points,
+  projectedPoints: null,
 });
 
 describe("exposure", () => {

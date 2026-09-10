@@ -775,6 +775,7 @@ export function buildDemoSnapshot(nowMs: number, epochOffsetMs = 0): PortfolioSn
     matchups: DEMO_MATCHUPS_BASE,
     games: [...games.values()],
     playerStats,
+    projections: [],
     alerts: alerts.slice(0, 16),
   };
 }

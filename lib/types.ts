@@ -258,6 +258,8 @@ export interface PortfolioSnapshot {
   matchups: NormalizedMatchup[];
   games: NormalizedNFLGame[];
   playerStats: NormalizedPlayerGameStats[];
+  /** Projected stat lines for the week (scored locally per league). */
+  projections: NormalizedPlayerGameStats[];
   alerts: PortfolioAlert[];
 }
 
@@ -274,6 +276,8 @@ export interface PlayerLeagueContext {
   slot: string;
   /** Fantasy points under THIS league's scoring settings. */
   points: number;
+  /** Projected points under THIS league's scoring settings (null if unknown). */
+  projectedPoints: number | null;
 }
 
 /** The fully-joined portfolio view of one canonical player. */
@@ -289,6 +293,8 @@ export interface PortfolioPlayer {
   starterExposure: number; // 0..1
   /** Sum of points across leagues where the user STARTS this player. */
   portfolioImpact: number;
+  /** Sum of PROJECTED points across leagues where the user starts him. */
+  projectedImpact: number;
   /** Sum of points across bench slots — shown separately, never mixed in. */
   benchPoints: number;
   /** Max single-league points (for display when not starting anywhere). */
@@ -302,6 +308,8 @@ export type PlayerLiveStatus =
   | "halftime"
   | "upcoming"
   | "final"
+  /** Has points this week but no game record (schedule feed unavailable). */
+  | "played"
   | "no_game";
 
 /** A game ranked by fantasy relevance to this user. */

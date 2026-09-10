@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { canonTeam, normalizeScheduleGame, normalizeWeekStats } from "./sleeperStats";
+import {
+  canonTeam,
+  normalizeScheduleGame,
+  normalizeSchedulePayload,
+  normalizeWeekStats,
+} from "./sleeperStats";
 
 describe("normalizeWeekStats", () => {
   const needed = new Set(["4034", "6794"]);
@@ -60,5 +65,45 @@ describe("normalizeScheduleGame", () => {
     expect(canonTeam("wsh")).toBe("WAS");
     expect(canonTeam("KC")).toBe("KC");
     expect(canonTeam(null)).toBeNull();
+  });
+
+  it("accepts alternate home/away key spellings", () => {
+    const g = normalizeScheduleGame({ home_team: "KC", away_team: "BUF", status: "pre_game" }, 2)!;
+    expect(g.homeTeam).toBe("KC");
+    expect(g.awayTeam).toBe("BUF");
+  });
+});
+
+describe("normalizeSchedulePayload", () => {
+  const kcBuf = { home: "KC", away: "BUF", status: "pre_game", game_id: "g1" };
+  const larSea = { home: "SEA", away: "LAR", status: "in_game", game_id: "g2" };
+
+  it("handles a plain array payload", () => {
+    const games = normalizeSchedulePayload([kcBuf, larSea], 1);
+    expect(games.map((g) => g.homeTeam)).toEqual(["KC", "SEA"]);
+  });
+
+  it("handles a { games: [...] } payload", () => {
+    expect(normalizeSchedulePayload({ games: [kcBuf] }, 1)).toHaveLength(1);
+  });
+
+  it("handles an object keyed by game id", () => {
+    expect(normalizeSchedulePayload({ g1: kcBuf, g2: larSea }, 1)).toHaveLength(2);
+  });
+
+  it("filters a season-wide payload down to the requested week", () => {
+    const seasonWide = [
+      { ...kcBuf, week: 1 },
+      { ...larSea, week: 2 },
+      { home: "DAL", away: "PHI", status: "pre_game", week: "1" }, // string week
+    ];
+    const games = normalizeSchedulePayload(seasonWide, 1);
+    expect(games.map((g) => g.homeTeam)).toEqual(["KC", "DAL"]);
+  });
+
+  it("tolerates garbage payloads", () => {
+    expect(normalizeSchedulePayload(null, 1)).toEqual([]);
+    expect(normalizeSchedulePayload("nope", 1)).toEqual([]);
+    expect(normalizeSchedulePayload([{ status: "pre_game" }], 1)).toEqual([]);
   });
 });

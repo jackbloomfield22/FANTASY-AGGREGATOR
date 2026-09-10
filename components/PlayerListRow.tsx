@@ -103,7 +103,9 @@ export function PlayerListRow({
                   : game.status === "live"
                     ? gamePhaseLabel(game)
                     : ""
-                : "No game"}
+                : player.liveStatus === "no_game"
+                  ? "No game"
+                  : ""}
             </span>
           </span>
           {game && game.status !== "scheduled" ? (

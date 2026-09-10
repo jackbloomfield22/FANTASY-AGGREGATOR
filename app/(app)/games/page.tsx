@@ -24,11 +24,15 @@ export default function GamesPage() {
             <div className="space-y-3">
               <PageHeader title="My NFL Sunday" />
               <EmptyState
-                title={snapshot.meta.liveSource === "none" ? "No live NFL data configured" : "No games this week"}
+                title={
+                  snapshot.meta.liveSource === "none"
+                    ? "No live NFL data configured"
+                    : "Game schedule temporarily unavailable"
+                }
                 message={
                   snapshot.meta.liveSource === "none"
                     ? "Your fantasy scoring is live from Sleeper. For real NFL game detail here (score, clock, possession, field position), add SPORTRADAR_API_KEY."
-                    : "Check back when the NFL schedule for your week is available."
+                    : "Sleeper isn't returning the NFL schedule right now. Your player stats and league scoring stay live — game cards come back automatically once the schedule feed responds."
                 }
               />
             </div>

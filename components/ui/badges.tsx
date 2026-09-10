@@ -23,6 +23,7 @@ const PLAYER_STATUS_STYLES: Record<PlayerLiveStatus, { label: string; cls: strin
   halftime: { label: "HALF", cls: "text-warn border-warn/40 bg-warn/10" },
   upcoming: { label: "UPCOMING", cls: "text-ink-dim border-edge bg-surface-2" },
   final: { label: "FINAL", cls: "text-ink-faint border-edge bg-surface-2" },
+  played: { label: "PLAYED", cls: "text-ink-faint border-edge bg-surface-2" },
   no_game: { label: "BYE", cls: "text-ink-faint border-edge bg-surface-2" },
 };
 

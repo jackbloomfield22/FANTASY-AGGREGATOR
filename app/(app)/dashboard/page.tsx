@@ -5,6 +5,7 @@ import { DataGate } from "@/components/DataGate";
 import { PortfolioSummary } from "@/components/PortfolioSummary";
 import { MatchupStrip } from "@/components/MatchupStrip";
 import { HomePlayersPanel } from "@/components/HomePlayersPanel";
+import { MostLeveragedPanel } from "@/components/MostLeveragedPanel";
 import { ImportantGameCard } from "@/components/NFLGameCard";
 import { LiveFeed } from "@/components/LiveFeed";
 import { kickoffLabel } from "@/lib/utils";
@@ -62,6 +63,7 @@ export default function DashboardPage() {
               </div>
 
               <div className="space-y-4 lg:col-span-2">
+                <MostLeveragedPanel players={players} week={snapshot.meta.week} />
                 {snapshot.alerts.length > 0 ? (
                   <section aria-label="Live activity">
                     <div className="mb-1.5 flex items-center justify-between">

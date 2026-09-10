@@ -64,6 +64,7 @@ async function buildSleeperSnapshot(
 
   let games: NormalizedNFLGame[] = [];
   let playerStats: NormalizedPlayerGameStats[] = [];
+  let projectionStats: NormalizedPlayerGameStats[] = [];
   let alerts: PortfolioAlert[] = [];
   let liveSource: PortfolioSnapshot["meta"]["liveSource"] = "none";
 
@@ -120,17 +121,16 @@ async function buildSleeperSnapshot(
       }
       const updatedAt = new Date().toISOString();
       playerStats = [];
+      projectionStats = [];
       for (const player of sync.players) {
         const sleeperId = player.providerIds.sleeper;
-        const stats = sleeperId ? weekStats.get(sleeperId) : undefined;
-        if (!stats) continue;
+        if (!sleeperId) continue;
         const game = gameByTeam.get(player.nflTeam);
-        playerStats.push({
-          playerId: player.id,
-          gameId: game?.id ?? `slg-w${sync.week}-${player.nflTeam}`,
-          stats,
-          updatedAt,
-        });
+        const gameId = game?.id ?? `slg-w${sync.week}-${player.nflTeam}`;
+        const stats = weekStats.get(sleeperId);
+        if (stats) playerStats.push({ playerId: player.id, gameId, stats, updatedAt });
+        const proj = projections.get(sleeperId);
+        if (proj) projectionStats.push({ playerId: player.id, gameId, stats: proj, updatedAt });
       }
 
       liveSource = "sleeper";
@@ -143,6 +143,7 @@ async function buildSleeperSnapshot(
       );
       games = [];
       playerStats = [];
+      projectionStats = [];
       liveSource = "none";
     }
   }
@@ -164,6 +165,7 @@ async function buildSleeperSnapshot(
     matchups: sync.matchups,
     games,
     playerStats,
+    projections: projectionStats,
     alerts,
   };
 }

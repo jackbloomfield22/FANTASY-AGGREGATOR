@@ -78,6 +78,7 @@ export const LIVE_STATUS_LABEL: Record<PlayerLiveStatus, string> = {
   halftime: "Halftime",
   upcoming: "Upcoming",
   final: "Final",
+  played: "Played",
   no_game: "No game",
 };
 

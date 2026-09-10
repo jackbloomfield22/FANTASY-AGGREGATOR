@@ -9,7 +9,7 @@ import { WinProbability } from "@/components/FantasyMatchupCard";
 import { MatchupStatusBadge } from "@/components/ui/badges";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { statLineText } from "@/components/PlayerStatLine";
-import { calculateFantasyPoints, scoringLabel } from "@/lib/scoring/engine";
+import { calculateFantasyPoints, round1, scoringLabel } from "@/lib/scoring/engine";
 import { playerLiveStatus } from "@/lib/portfolio/aggregate";
 import { cn, formatPoints, gamePhaseLabel, SLOT_ORDER } from "@/lib/utils";
 import { track } from "@/lib/analytics";
@@ -33,6 +33,8 @@ interface LineupEntry {
   gameLabel: string;
   statLine: string;
   points: number;
+  /** League-scored projection — shown faintly while points are still 0. */
+  projectedPoints: number | null;
   status: PlayerLiveStatus;
 }
 
@@ -43,6 +45,7 @@ function buildLineup(
 ): { starters: LineupEntry[]; bench: LineupEntry[] } {
   const playerById = new Map(snapshot.players.map((p) => [p.id, p]));
   const statsByPlayer = new Map(snapshot.playerStats.map((s) => [s.playerId, s.stats]));
+  const projByPlayer = new Map((snapshot.projections ?? []).map((s) => [s.playerId, s.stats]));
   const gameByTeam = new Map(
     snapshot.games.flatMap((g) => [
       [g.homeTeam, g] as const,
@@ -56,17 +59,23 @@ function buildLineup(
       const player = playerById.get(slot.playerId);
       if (!player) return null;
       const stats = statsByPlayer.get(player.id) ?? null;
+      const proj = projByPlayer.get(player.id) ?? null;
       const game = gameByTeam.get(player.nflTeam) ?? null;
       const points = stats
         ? calculateFantasyPoints(stats, league.scoringSettings)
         : slot.providerPoints ?? 0;
+      const status = playerLiveStatus(game, player, {
+        hasSchedule: snapshot.games.length > 0,
+        hasStats: stats !== null,
+      });
       return {
         slot,
         player,
-        gameLabel: game ? gamePhaseLabel(game) : "No game",
+        gameLabel: game ? gamePhaseLabel(game) : status === "no_game" ? "No game" : "",
         statLine: statLineText(player.position, stats),
         points,
-        status: playerLiveStatus(game, player),
+        projectedPoints: proj ? round1(calculateFantasyPoints(proj, league.scoringSettings)) : null,
+        status,
       };
     })
     .filter((r): r is LineupEntry => r !== null)
@@ -107,6 +116,7 @@ const STATUS_DOT: Record<PlayerLiveStatus, string> = {
   halftime: "bg-warn",
   upcoming: "bg-ink-faint/40",
   final: "bg-edge-strong",
+  played: "bg-edge-strong",
   no_game: "bg-edge-strong",
 };
 
@@ -170,14 +180,28 @@ function DuelRow({ mine, theirs }: { mine?: LineupEntry; theirs?: LineupEntry })
   return (
     <li className="grid grid-cols-[1fr_auto_38px_auto_1fr] items-center gap-x-2 px-3 py-2 sm:gap-x-3">
       <DuelSide entry={mine} winning={myPts >= theirPts} />
-      <span className={cn("tnum text-sm font-black", myPts >= theirPts ? "text-ink" : "text-ink-faint")}>
-        {formatPoints(myPts)}
+      <span className="text-right">
+        <span className={cn("tnum block text-sm font-black leading-tight", myPts >= theirPts ? "text-ink" : "text-ink-faint")}>
+          {formatPoints(myPts)}
+        </span>
+        {mine && myPts === 0 && mine.projectedPoints ? (
+          <span className="tnum block text-[9px] font-medium leading-tight text-ink-faint">
+            proj {formatPoints(mine.projectedPoints)}
+          </span>
+        ) : null}
       </span>
       <span className="text-center text-[9px] font-bold tracking-wider text-ink-faint">
         {slotLabel}
       </span>
-      <span className={cn("tnum text-right text-sm font-black", theirPts >= myPts ? "text-ink" : "text-ink-faint")}>
-        {formatPoints(theirPts)}
+      <span className="text-left">
+        <span className={cn("tnum block text-sm font-black leading-tight", theirPts >= myPts ? "text-ink" : "text-ink-faint")}>
+          {formatPoints(theirPts)}
+        </span>
+        {theirs && theirPts === 0 && theirs.projectedPoints ? (
+          <span className="tnum block text-[9px] font-medium leading-tight text-ink-faint">
+            proj {formatPoints(theirs.projectedPoints)}
+          </span>
+        ) : null}
       </span>
       <DuelSide entry={theirs} mirrored winning={theirPts >= myPts} />
     </li>
@@ -208,7 +232,12 @@ function BenchList({ title, rows, mirrored }: { title: string; rows: LineupEntry
                   {r.player.nflTeam} · {r.gameLabel}
                 </span>
               </span>
-              <span className="tnum shrink-0 text-xs font-bold text-ink-dim">{formatPoints(r.points)}</span>
+              <span className="shrink-0 text-right">
+                <span className="tnum block text-xs font-bold text-ink-dim">{formatPoints(r.points)}</span>
+                {r.points === 0 && r.projectedPoints ? (
+                  <span className="tnum block text-[9px] text-ink-faint">proj {formatPoints(r.projectedPoints)}</span>
+                ) : null}
+              </span>
             </li>
           ))
         )}

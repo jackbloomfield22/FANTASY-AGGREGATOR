@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import type { PortfolioPlayer } from "@/lib/types";
-import { cn, formatPoints, formatSigned, gamePhaseLabel, kickoffLabel } from "@/lib/utils";
+import { cn, formatPoints, gamePhaseLabel, kickoffLabel } from "@/lib/utils";
 import { PlayerAvatar, POSITION_TEXT } from "@/components/PlayerAvatar";
 import { statLineText } from "@/components/PlayerStatLine";
+import { LeagueScoreChips } from "@/components/LeagueChip";
 import { LiveIndicator } from "@/components/ui/badges";
 
 /**
@@ -54,21 +55,8 @@ function LeaderRow({ p, rank }: { p: PortfolioPlayer; rank: number }) {
             {p.game && p.game.status !== "scheduled" ? ` · ${gamePhaseLabel(p.game)}` : ""}
             {p.stats ? ` · ${statLineText(p.player.position, p.stats)}` : ""}
           </span>
-        </span>
-        <span className="shrink-0 text-right">
-          <span
-            className={cn(
-              "tnum block text-base font-black leading-none",
-              p.portfolioImpact > 0 ? "text-win" : "text-ink-faint"
-            )}
-          >
-            {p.portfolioImpact > 0 ? formatSigned(p.portfolioImpact) : "—"}
-          </span>
-          {p.benchPoints > 0 ? (
-            <span className="tnum block text-[9px] text-ink-faint">
-              +{formatPoints(p.benchPoints)} bench
-            </span>
-          ) : null}
+          {/* What he adds in EACH league — never a single rolled-up number. */}
+          <LeagueScoreChips contexts={p.leagues} className="mt-1" />
         </span>
       </Link>
     </li>
@@ -88,14 +76,21 @@ export function HomePlayersPanel({
 
   // While games are on, the board is your live scorers; otherwise it's the
   // week's top scorers so far (real Sleeper points even with no live feed).
-  const board = (anyLive ? players.filter(isLiveNow) : players.filter((p) => !isLiveNow(p)))
+  const board = (anyLive
+    ? players.filter(isLiveNow)
+    : players.filter((p) => !isLiveNow(p) && (p.portfolioImpact > 0 || p.benchPoints > 0))
+  )
     .slice()
     .sort(byPoints)
     .slice(0, 8);
 
   const yetToPlay = players
     .filter((p) => p.liveStatus === "upcoming")
-    .sort((a, b) => (a.game?.kickoffAt ?? "9999").localeCompare(b.game?.kickoffAt ?? "9999"));
+    .sort(
+      (a, b) =>
+        (a.game?.kickoffAt ?? "9999").localeCompare(b.game?.kickoffAt ?? "9999") ||
+        b.projectedImpact - a.projectedImpact
+    );
 
   if (players.length === 0) return null;
 
@@ -143,7 +138,12 @@ export function HomePlayersPanel({
                   <PlayerAvatar player={p.player} size="sm" className="h-6 w-6 text-[9px]" />
                   <span className="text-xs font-semibold text-ink">{p.player.fullName}</span>
                   <span className="tnum text-[10px] text-ink-faint">
-                    {p.game ? kickoffLabel(p.game.kickoffAt) : ""}
+                    {[
+                      p.game ? kickoffLabel(p.game.kickoffAt) : null,
+                      p.projectedImpact > 0 ? `proj ${formatPoints(p.projectedImpact)}` : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
                   </span>
                 </Link>
               </li>

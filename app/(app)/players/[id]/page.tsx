@@ -105,7 +105,12 @@ export default function PlayerDetailPage({ params }: { params: Promise<{ id: str
           null;
         const stats =
           owned?.stats ?? snapshot.playerStats.find((s) => s.playerId === rawPlayer.id)?.stats ?? null;
-        const liveStatus = owned?.liveStatus ?? playerLiveStatus(game, rawPlayer);
+        const liveStatus =
+          owned?.liveStatus ??
+          playerLiveStatus(game, rawPlayer, {
+            hasSchedule: snapshot.games.length > 0,
+            hasStats: stats !== null,
+          });
         const opponent = game
           ? game.homeTeam === rawPlayer.nflTeam
             ? `vs ${game.awayTeam}`
@@ -220,9 +225,15 @@ export default function PlayerDetailPage({ params }: { params: Promise<{ id: str
                             >
                               {ctx.isStarter ? "STARTING" : "BENCH"}
                             </span>
-                            <span className="tnum text-sm font-bold text-ink">
-                              {formatPoints(ctx.points)} pts
-                            </span>
+                            {ctx.points === 0 && ctx.projectedPoints ? (
+                              <span className="tnum text-sm font-medium text-ink-faint">
+                                proj {formatPoints(ctx.projectedPoints)}
+                              </span>
+                            ) : (
+                              <span className="tnum text-sm font-bold text-ink">
+                                {formatPoints(ctx.points)} pts
+                              </span>
+                            )}
                           </div>
                         </li>
                       ))}

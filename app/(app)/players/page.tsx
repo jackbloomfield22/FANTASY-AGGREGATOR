@@ -83,9 +83,13 @@ export default function PlayersPage() {
           .sort((a, b) => b.portfolioImpact - a.portfolioImpact || b.benchPoints - a.benchPoints);
         const upcoming = filtered
           .filter((p) => p.liveStatus === "upcoming" || p.liveStatus === "no_game")
-          .sort((a, b) => (a.game?.kickoffAt ?? "9999").localeCompare(b.game?.kickoffAt ?? "9999"));
+          .sort(
+            (a, b) =>
+              (a.game?.kickoffAt ?? "9999").localeCompare(b.game?.kickoffAt ?? "9999") ||
+              b.projectedImpact - a.projectedImpact
+          );
         const finished = filtered
-          .filter((p) => p.liveStatus === "final")
+          .filter((p) => p.liveStatus === "final" || p.liveStatus === "played")
           .sort((a, b) => b.portfolioImpact - a.portfolioImpact || b.benchPoints - a.benchPoints);
 
         return (

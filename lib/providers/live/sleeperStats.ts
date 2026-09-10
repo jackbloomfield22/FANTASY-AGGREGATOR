@@ -76,8 +76,8 @@ type Json = any;
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
 export function normalizeScheduleGame(raw: Json, week: number): NormalizedNFLGame | null {
-  const home = canonTeam(raw?.home);
-  const away = canonTeam(raw?.away);
+  const home = canonTeam(raw?.home ?? raw?.home_team ?? raw?.homeTeam);
+  const away = canonTeam(raw?.away ?? raw?.away_team ?? raw?.awayTeam);
   if (!home || !away) return null;
   const status = normalizeGameStatus(raw?.status);
   let kickoffAt = new Date().toISOString();
@@ -157,6 +157,26 @@ export function normalizeWeekStats(
   return out;
 }
 
+/**
+ * Normalize any known schedule payload shape into this week's games:
+ * a plain array, `{ games: [...] }`, or an object keyed by game id. A
+ * season-wide payload carries every week — entries with a `week` field that
+ * doesn't match are dropped; entries without one are kept as-is.
+ */
+export function normalizeSchedulePayload(raw: Json, week: number): NormalizedNFLGame[] {
+  const entries: Json[] = Array.isArray(raw)
+    ? raw
+    : Array.isArray(raw?.games)
+      ? raw.games
+      : raw && typeof raw === "object"
+        ? Object.values(raw)
+        : [];
+  return entries
+    .filter((e: Json) => e?.week === undefined || Number(e?.week) === week)
+    .map((g: Json) => normalizeScheduleGame(g, week))
+    .filter((g): g is NormalizedNFLGame => g !== null);
+}
+
 // ---------------------------------------------------------------------------
 // Provider
 // ---------------------------------------------------------------------------
@@ -179,16 +199,24 @@ export class SleeperStatsLiveProvider implements LiveSportsProvider {
   }
 
   async getSchedule(season: number, week: number): Promise<NormalizedNFLGame[]> {
-    try {
-      const raw = await sleeperGet<Json>(`/schedule/nfl/regular/${season}/${week}`, SCHEDULE_TTL);
-      if (!Array.isArray(raw)) return [];
-      return raw
-        .map((g: Json) => normalizeScheduleGame(g, week))
-        .filter((g): g is NormalizedNFLGame => g !== null);
-    } catch {
-      // Schedule is best-effort — stats and scoring work without it.
-      return [];
+    // Sleeper's schedule lives at an unversioned path whose exact shape has
+    // varied; try each known candidate and accept array/object payloads.
+    const candidates = [
+      `/schedule/nfl/regular/${season}/${week}`,
+      `/v1/schedule/nfl/regular/${season}/${week}`,
+      `/schedule/nfl/regular/${season}`,
+    ];
+    for (const path of candidates) {
+      try {
+        const raw = await sleeperGet<Json>(path, SCHEDULE_TTL);
+        const thisWeek = normalizeSchedulePayload(raw, week);
+        if (thisWeek.length > 0) return thisWeek;
+      } catch {
+        // try the next candidate
+      }
     }
+    // Schedule is best-effort — stats and scoring work without it.
+    return [];
   }
 
   async getLiveGames(): Promise<NormalizedNFLGame[]> {
