@@ -29,13 +29,19 @@ export function SleeperConnectCard({ onConnected }: { onConnected?: () => void }
     setBusy("sync");
     setError(null);
     try {
-      await fetch("/api/demo/simulate", { method: simActive ? "DELETE" : "POST" });
+      const res = await fetch("/api/demo/simulate", { method: simActive ? "DELETE" : "POST" });
+      if (!res.ok) {
+        setError("Couldn't toggle the simulation — try again.");
+        return;
+      }
       setNotice(
         simActive
           ? "Simulation off — back to real data only."
           : "Simulating a live Sunday over your real rosters. Look for the SIM LIVE badge."
       );
       await refresh();
+    } catch {
+      setError("Network error toggling the simulation — try again.");
     } finally {
       setBusy(null);
     }

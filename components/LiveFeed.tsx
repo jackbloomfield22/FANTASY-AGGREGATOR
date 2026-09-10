@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import type { AlertType, PortfolioAlert } from "@/lib/types";
+import type { AlertType, NormalizedPlayer, PortfolioAlert } from "@/lib/types";
 import { cn, formatSigned, timeAgo } from "@/lib/utils";
 import { EmptyState } from "@/components/ui/states";
+import { PlayerAvatar } from "@/components/PlayerAvatar";
+import { usePlayerLookup } from "@/components/providers/PortfolioProvider";
 
 const ALERT_META: Record<AlertType, { label: string; cls: string; accent: string }> = {
   touchdown: { label: "TOUCHDOWN", cls: "text-win border-win/40 bg-win/10", accent: "border-l-win" },
@@ -16,19 +18,30 @@ const ALERT_META: Record<AlertType, { label: string; cls: string; accent: string
   stat_update: { label: "UPDATE", cls: "text-ink-dim border-edge bg-surface-2", accent: "border-l-edge-strong" },
 };
 
-export function AlertCard({ alert, className }: { alert: PortfolioAlert; className?: string }) {
+export function AlertCard({
+  alert,
+  player,
+  className,
+}: {
+  alert: PortfolioAlert;
+  player?: NormalizedPlayer;
+  className?: string;
+}) {
   const meta = ALERT_META[alert.type];
   const starters = alert.leagueImpacts.filter((l) => l.isStarter);
   const body = (
     <>
       <div className="flex items-center justify-between gap-2">
-        <span
-          className={cn(
-            "rounded border px-1.5 py-0.5 text-[9px] font-bold tracking-wider",
-            meta.cls
-          )}
-        >
-          {meta.label}
+        <span className="flex items-center gap-2">
+          {player ? <PlayerAvatar player={player} size="sm" /> : null}
+          <span
+            className={cn(
+              "rounded border px-1.5 py-0.5 text-[9px] font-bold tracking-wider",
+              meta.cls
+            )}
+          >
+            {meta.label}
+          </span>
         </span>
         <time dateTime={alert.at} className="tnum text-[10px] text-ink-faint">
           {timeAgo(alert.at)}
@@ -91,6 +104,7 @@ export function LiveFeed({
   limit?: number;
   className?: string;
 }) {
+  const playerById = usePlayerLookup();
   const shown = limit ? alerts.slice(0, limit) : alerts;
   if (shown.length === 0) {
     return (
@@ -107,7 +121,7 @@ export function LiveFeed({
     <ol aria-live="off" className={cn("space-y-2", className)}>
       {shown.map((a) => (
         <li key={a.id}>
-          <AlertCard alert={a} />
+          <AlertCard alert={a} player={a.playerId ? playerById.get(a.playerId) : undefined} />
         </li>
       ))}
     </ol>

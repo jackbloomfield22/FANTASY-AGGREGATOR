@@ -47,10 +47,18 @@ function describeDelta(d: RawStatLine): string {
   if (n(d.rec_yd)) parts.push(`${d.rec_yd! > 0 ? "+" : ""}${d.rec_yd} rec yds`);
   if (n(d.pass_int)) parts.push(`${d.pass_int} INT`);
   if (n(d.fum_lost)) parts.push("fumble lost");
+  if (n(d.pass_2pt) || n(d.rush_2pt) || n(d.rec_2pt)) parts.push("2-pt conversion");
   const fgs = n(d.fgm) + n(d.fgm_0_19) + n(d.fgm_20_29) + n(d.fgm_30_39) + n(d.fgm_40_49) + n(d.fgm_50p);
   if (fgs) parts.push(`${fgs > 1 ? `${fgs} ` : ""}FG`);
   if (n(d.xpm)) parts.push(`${n(d.xpm) > 1 ? `${d.xpm} ` : ""}XP`);
-  return parts.join(" · ");
+  // Defense/special teams
+  if (n(d.sack)) parts.push(`${n(d.sack) > 1 ? `${d.sack} ` : ""}sack`);
+  if (n(d.int)) parts.push(`${n(d.int) > 1 ? `${d.int} ` : ""}INT`);
+  if (n(d.fum_rec)) parts.push("fumble recovery");
+  if (n(d.def_td)) parts.push("defensive TD");
+  if (n(d.safe)) parts.push("safety");
+  // Any point-moving change we don't have words for still gets a headline.
+  return parts.length > 0 ? parts.join(" · ") : "scoring update";
 }
 
 /**

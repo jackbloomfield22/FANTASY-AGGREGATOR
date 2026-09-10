@@ -40,7 +40,14 @@ function NavLink({
           active ? "text-accent" : "text-ink-faint hover:text-ink-dim"
         )}
       >
-        <Icon size={20} strokeWidth={active ? 2.4 : 2} aria-hidden />
+        <span
+          className={cn(
+            "flex items-center justify-center rounded-full px-3 py-0.5 transition-colors",
+            active && "bg-accent/15"
+          )}
+        >
+          <Icon size={19} strokeWidth={active ? 2.4 : 2} aria-hidden />
+        </span>
         {label}
       </Link>
     );
@@ -50,10 +57,13 @@ function NavLink({
       href={href}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+        "relative flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
         active ? "bg-surface-3 text-ink" : "text-ink-dim hover:bg-surface-2 hover:text-ink"
       )}
     >
+      {active ? (
+        <span aria-hidden className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-accent" />
+      ) : null}
       <Icon size={17} aria-hidden />
       {label}
     </Link>

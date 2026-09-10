@@ -22,14 +22,27 @@ const EXPOSURE_CLS: Record<RankedGame["exposureLevel"], string> = {
 
 function ScoreBlock({ game }: { game: RankedGame["game"] }) {
   const isLive = game.status === "live" || game.status === "halftime";
+  const possDot = (team: string) =>
+    isLive && game.possessionTeam === team ? (
+      <span
+        aria-label="has possession"
+        className={cn("ml-1 inline-block h-1.5 w-1.5 rounded-full align-middle", game.redZone ? "bg-redzone" : "bg-ink-dim")}
+      />
+    ) : null;
   return (
     <div className="flex items-center gap-3">
       <div className="grid grid-cols-[auto_auto] items-baseline gap-x-3 gap-y-0.5">
-        <span className="text-sm font-bold text-ink">{game.awayTeam}</span>
+        <span className="text-sm font-bold text-ink">
+          {game.awayTeam}
+          {possDot(game.awayTeam)}
+        </span>
         <span className={cn("tnum text-2xl font-black leading-none", game.awayScore >= game.homeScore ? "text-ink" : "text-ink-dim")}>
           {game.status === "scheduled" ? "—" : game.awayScore}
         </span>
-        <span className="text-sm font-bold text-ink">{game.homeTeam}</span>
+        <span className="text-sm font-bold text-ink">
+          {game.homeTeam}
+          {possDot(game.homeTeam)}
+        </span>
         <span className={cn("tnum text-2xl font-black leading-none", game.homeScore >= game.awayScore ? "text-ink" : "text-ink-dim")}>
           {game.status === "scheduled" ? "—" : game.homeScore}
         </span>

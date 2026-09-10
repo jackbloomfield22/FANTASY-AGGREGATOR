@@ -8,6 +8,7 @@ import { StatusBadge, ExposureBadge, StatPill } from "@/components/ui/badges";
 import { EmptyState } from "@/components/ui/states";
 import { MiniFootballField } from "@/components/MiniFootballField";
 import { PlayerStatLine } from "@/components/PlayerStatLine";
+import { PlayerAvatar, POSITION_TEXT } from "@/components/PlayerAvatar";
 import { scoringLabel } from "@/lib/scoring/engine";
 import { playerLiveStatus } from "@/lib/portfolio/aggregate";
 import {
@@ -122,15 +123,21 @@ export default function PlayerDetailPage({ params }: { params: Promise<{ id: str
             </Link>
 
             <header className="flex flex-wrap items-start justify-between gap-2">
-              <div>
-                <h1 className="text-2xl font-black uppercase tracking-wide text-ink">
-                  {rawPlayer.fullName}
-                </h1>
-                <p className="text-sm font-medium text-ink-dim">
-                  {rawPlayer.position} · {rawPlayer.nflTeam}
-                  {opponent ? ` · ${opponent}` : ""}
-                  {game ? ` · ${gamePhaseLabel(game)}` : ""}
-                </p>
+              <div className="flex items-center gap-3">
+                <PlayerAvatar player={rawPlayer} size="lg" />
+                <div>
+                  <h1 className="text-2xl font-black uppercase tracking-wide text-ink">
+                    {rawPlayer.fullName}
+                  </h1>
+                  <p className="text-sm font-medium text-ink-dim">
+                    <span className={cn("font-bold", POSITION_TEXT[rawPlayer.position])}>
+                      {rawPlayer.position}
+                    </span>{" "}
+                    · {rawPlayer.nflTeam}
+                    {opponent ? ` · ${opponent}` : ""}
+                    {game ? ` · ${gamePhaseLabel(game)}` : ""}
+                  </p>
+                </div>
               </div>
               <StatusBadge status={liveStatus} />
             </header>

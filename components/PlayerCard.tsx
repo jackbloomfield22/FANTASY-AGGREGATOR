@@ -7,6 +7,7 @@ import { ExposureBadge, StatPill, StatusBadge } from "@/components/ui/badges";
 import { PlayerStatLine } from "@/components/PlayerStatLine";
 import { LeagueChip } from "@/components/LeagueChip";
 import { MiniFootballField } from "@/components/MiniFootballField";
+import { PlayerAvatar, POSITION_TEXT } from "@/components/PlayerAvatar";
 
 /**
  * The core portfolio player card: one canonical player, all leagues at once.
@@ -33,24 +34,28 @@ export function PlayerCard({
       )}
     >
       <header className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <Link
-            href={`/players/${p.id}`}
-            className="text-sm font-bold uppercase tracking-wide text-ink hover:text-accent"
-          >
-            {p.fullName}
-            <span className="absolute inset-0" aria-hidden />
-          </Link>
-          <p className="text-xs font-medium text-ink-dim">
-            {p.position} · {p.nflTeam}
-            {game ? (
-              <span className="tnum">
-                {" "}
-                · {game.awayTeam} {game.awayScore} — {game.homeTeam} {game.homeScore} ·{" "}
-                {gamePhaseLabel(game)}
-              </span>
-            ) : null}
-          </p>
+        <div className="flex min-w-0 items-center gap-2.5">
+          <PlayerAvatar player={p} size="md" />
+          <div className="min-w-0">
+            <Link
+              href={`/players/${p.id}`}
+              className="text-sm font-bold uppercase tracking-wide text-ink hover:text-accent"
+            >
+              {p.fullName}
+              <span className="absolute inset-0" aria-hidden />
+            </Link>
+            <p className="text-xs font-medium text-ink-dim">
+              <span className={cn("font-bold", POSITION_TEXT[p.position])}>{p.position}</span> ·{" "}
+              {p.nflTeam}
+              {game ? (
+                <span className="tnum">
+                  {" "}
+                  · {game.awayTeam} {game.awayScore} — {game.homeTeam} {game.homeScore} ·{" "}
+                  {gamePhaseLabel(game)}
+                </span>
+              ) : null}
+            </p>
+          </div>
         </div>
         <StatusBadge status={player.liveStatus} />
       </header>
@@ -117,11 +122,13 @@ export function PlayerRow({
         className
       )}
     >
-      <div className="min-w-0">
+      <PlayerAvatar player={p} size="sm" />
+      <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-ink">
           {p.fullName}
           <span className="ml-1.5 text-xs font-medium text-ink-faint">
-            {p.position} · {p.nflTeam}
+            <span className={cn("font-bold", POSITION_TEXT[p.position])}>{p.position}</span> ·{" "}
+            {p.nflTeam}
           </span>
         </p>
         <p className="tnum truncate text-[11px] text-ink-dim">

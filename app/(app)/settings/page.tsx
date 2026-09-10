@@ -37,7 +37,7 @@ function ComingSoonCard({ name, note }: { name: string; note: string }) {
 export default function SettingsPage() {
   const router = useRouter();
   const { refresh, snapshot } = usePortfolio();
-  const { theme, setTheme, compactCards, setCompactCards } = useDisplayPrefs();
+  const { theme, setTheme } = useDisplayPrefs();
   const [email, setEmail] = useState<string | null>(null);
   const [resetNotice, setResetNotice] = useState<string | null>(null);
 
@@ -108,15 +108,6 @@ export default function SettingsPage() {
                   </button>
                 ))}
               </div>
-              <label className="mt-4 flex items-center justify-between gap-3">
-                <span className="text-sm font-semibold text-ink">Compact player cards</span>
-                <input
-                  type="checkbox"
-                  checked={compactCards}
-                  onChange={(e) => setCompactCards(e.target.checked)}
-                  className="h-4 w-4 accent-[var(--accent)]"
-                />
-              </label>
             </div>
           </Section>
 

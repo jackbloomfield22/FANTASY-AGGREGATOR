@@ -3,6 +3,8 @@
 import Link from "next/link";
 import type { AlertType, PortfolioAlert } from "@/lib/types";
 import { cn, formatSigned, timeAgo } from "@/lib/utils";
+import { PlayerAvatar } from "@/components/PlayerAvatar";
+import { usePlayerLookup } from "@/components/providers/PortfolioProvider";
 
 const TYPE_META: Record<AlertType, { label: string; text: string; accent: string }> = {
   touchdown: { label: "TD", text: "text-win", accent: "border-l-win" },
@@ -29,6 +31,7 @@ export function ActivityTicker({
   limit?: number;
   className?: string;
 }) {
+  const playerById = usePlayerLookup();
   const shown = alerts.slice(0, limit);
   if (shown.length === 0) return null;
 
@@ -42,11 +45,15 @@ export function ActivityTicker({
           const meta = TYPE_META[a.type];
           const starters = a.leagueImpacts.filter((l) => l.isStarter).length;
           const bench = a.leagueImpacts.length - starters;
+          const tickerPlayer = a.playerId ? playerById.get(a.playerId) : undefined;
           const inner = (
             <>
               <div className="flex items-center justify-between gap-2">
-                <span className={cn("text-[9px] font-bold tracking-wider", meta.text)}>
-                  {meta.label}
+                <span className="flex items-center gap-1.5">
+                  {tickerPlayer ? <PlayerAvatar player={tickerPlayer} size="sm" className="h-5 w-5 text-[8px]" /> : null}
+                  <span className={cn("text-[9px] font-bold tracking-wider", meta.text)}>
+                    {meta.label}
+                  </span>
                 </span>
                 <time dateTime={a.at} className="tnum text-[9px] text-ink-faint">
                   {timeAgo(a.at)}

@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, X } from "lucide-react";
 import { usePortfolio } from "@/components/providers/PortfolioProvider";
+import { PlayerAvatar } from "@/components/PlayerAvatar";
+import type { NormalizedPlayer } from "@/lib/types";
 import { track } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +15,7 @@ interface SearchResult {
   label: string;
   sub: string;
   href: string;
+  player?: NormalizedPlayer;
 }
 
 /** Global search across players, fantasy teams, leagues and NFL teams. */
@@ -50,6 +53,7 @@ export function SearchModal({ open, onClose }: { open: boolean; onClose: () => v
         out.push({
           key: `pl-${p.player.id}`,
           group: "Players",
+          player: p.player,
           label: p.player.fullName,
           sub: `${p.player.position} · ${p.player.nflTeam} · ${p.rosteredCount} league${p.rosteredCount === 1 ? "" : "s"}`,
           href: `/players/${p.player.id}`,
@@ -139,9 +143,12 @@ export function SearchModal({ open, onClose }: { open: boolean; onClose: () => v
                   i === 0 && "bg-surface-2/60"
                 )}
               >
-                <span>
-                  <span className="block text-sm font-semibold text-ink">{r.label}</span>
-                  <span className="block text-[11px] text-ink-dim">{r.sub}</span>
+                <span className="flex min-w-0 items-center gap-2.5">
+                  {r.player ? <PlayerAvatar player={r.player} size="sm" /> : null}
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-semibold text-ink">{r.label}</span>
+                    <span className="block truncate text-[11px] text-ink-dim">{r.sub}</span>
+                  </span>
                 </span>
                 <span className="shrink-0 rounded border border-edge bg-surface-2 px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-ink-faint">
                   {r.group}

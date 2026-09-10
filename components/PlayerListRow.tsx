@@ -9,6 +9,7 @@ import { StatusBadge } from "@/components/ui/badges";
 import { statLineText } from "@/components/PlayerStatLine";
 import { LeagueChip } from "@/components/LeagueChip";
 import { MiniFootballField } from "@/components/MiniFootballField";
+import { PlayerAvatar, POSITION_TEXT } from "@/components/PlayerAvatar";
 
 /**
  * One clean line per player, built to answer two questions at a glance:
@@ -43,41 +44,52 @@ export function PlayerListRow({
         className
       )}
     >
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-        className="grid w-full grid-cols-[1fr_auto] items-center gap-x-3 px-3.5 py-2.5 text-left md:grid-cols-[minmax(170px,230px)_150px_1fr_auto] md:gap-x-5"
-      >
+      {/* The expand control is an overlay BUTTON behind the content (valid
+          HTML — no interactive elements nested inside it); the player-name
+          LINK opts back into pointer events above it. */}
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+          aria-label={`${open ? "Hide" : "Show"} league details for ${p.fullName}`}
+          className="absolute inset-0 h-full w-full cursor-pointer"
+        />
+        <div className="pointer-events-none relative grid grid-cols-[1fr_auto] items-center gap-x-3 px-3.5 py-2.5 text-left md:grid-cols-[minmax(170px,230px)_150px_1fr_auto] md:gap-x-5">
         {/* WHO */}
-        <span className="min-w-0">
-          <span className="flex items-center gap-1.5">
-            <Link
-              href={`/players/${p.id}`}
-              onClick={(e) => e.stopPropagation()}
-              className="truncate text-sm font-bold text-ink hover:text-accent"
-            >
-              {p.fullName}
-            </Link>
-            {player.starterCount > 0 ? (
-              <span className="shrink-0 rounded border border-win/40 bg-win/10 px-1 py-px text-[8px] font-bold tracking-wider text-win">
-                START{player.starterCount > 1 ? ` ×${player.starterCount}` : ""}
+        <span className="flex min-w-0 items-center gap-2.5">
+          <PlayerAvatar player={p} size="md" />
+          <span className="min-w-0">
+            <span className="flex items-center gap-1.5">
+              <Link
+                href={`/players/${p.id}`}
+                onClick={(e) => e.stopPropagation()}
+                className="truncate text-sm font-bold text-ink hover:text-accent"
+              >
+                {p.fullName}
+              </Link>
+              {player.starterCount > 0 ? (
+                <span className="shrink-0 rounded border border-win/40 bg-win/10 px-1 py-px text-[8px] font-bold tracking-wider text-win">
+                  START{player.starterCount > 1 ? ` ×${player.starterCount}` : ""}
+                </span>
+              ) : (
+                <span className="shrink-0 rounded border border-edge bg-surface-2 px-1 py-px text-[8px] font-bold tracking-wider text-ink-faint">
+                  BENCH
+                </span>
+              )}
+            </span>
+            <span className="block truncate text-[11px] font-medium text-ink-dim">
+              <span className={cn("font-bold", POSITION_TEXT[p.position])}>{p.position}</span>
+              {" · "}
+              {p.nflTeam}
+              {opponent ? ` ${opponent}` : ""}
+              <span className="md:hidden">
+                {game
+                  ? ` · ${game.status === "scheduled" ? kickoffLabel(game.kickoffAt) : gamePhaseLabel(game)}`
+                  : ""}
+                {isRedZone ? " · " : ""}
+                {isRedZone ? <span className="font-bold text-redzone">RED ZONE</span> : null}
               </span>
-            ) : (
-              <span className="shrink-0 rounded border border-edge bg-surface-2 px-1 py-px text-[8px] font-bold tracking-wider text-ink-faint">
-                BENCH
-              </span>
-            )}
-          </span>
-          <span className="block truncate text-[11px] font-medium text-ink-dim">
-            {p.position} · {p.nflTeam}
-            {opponent ? ` ${opponent}` : ""}
-            <span className="md:hidden">
-              {game
-                ? ` · ${game.status === "scheduled" ? kickoffLabel(game.kickoffAt) : gamePhaseLabel(game)}`
-                : ""}
-              {isRedZone ? " · " : ""}
-              {isRedZone ? <span className="font-bold text-redzone">RED ZONE</span> : null}
             </span>
           </span>
         </span>
@@ -142,7 +154,8 @@ export function PlayerListRow({
             className={cn("shrink-0 text-ink-faint transition-transform", open && "rotate-180")}
           />
         </span>
-      </button>
+        </div>
+      </div>
 
       {open ? (
         <div className="space-y-2.5 border-t border-edge px-3.5 py-3">

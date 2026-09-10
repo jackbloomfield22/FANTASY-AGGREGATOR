@@ -119,6 +119,15 @@ export function usePortfolio(): PortfolioContextValue {
   return ctx;
 }
 
+/** Canonical-player lookup for feed/ticker cards (memoized per snapshot). */
+export function usePlayerLookup() {
+  const { snapshot } = usePortfolio();
+  return useMemo(
+    () => new Map((snapshot?.players ?? []).map((p) => [p.id, p])),
+    [snapshot]
+  );
+}
+
 /** Seconds since the last successful refresh, re-rendering once per second. */
 export function useSecondsSinceUpdate(): number | null {
   const { lastUpdatedAt } = usePortfolio();

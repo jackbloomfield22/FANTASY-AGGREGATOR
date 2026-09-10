@@ -36,10 +36,19 @@ export async function getDemoEpochOffsetMs(): Promise<number> {
   return Number.isFinite(n) ? n : 0;
 }
 
-/** Simulate a live NFL Sunday over real (Sleeper) rosters when no live provider exists. */
-export async function isSimulatedLive(): Promise<boolean> {
+/**
+ * When the simulated live Sunday was enabled (ms epoch), or null when off.
+ * The timestamp anchors the simulation so the day plays forward once.
+ */
+export async function getSimLiveEnabledAt(): Promise<number | null> {
   const store = await cookies();
-  return store.get(SIM_LIVE_COOKIE)?.value === "1";
+  const raw = store.get(SIM_LIVE_COOKIE)?.value;
+  if (!raw) return null;
+  const n = Number(raw);
+  // Legacy "1" cookies (pre-timestamp) anchor to a fixed recent moment so
+  // they still resolve to a valid, monotonic simulation.
+  if (!Number.isFinite(n) || n <= 0) return Date.UTC(2026, 8, 6, 18, 0, 0);
+  return n;
 }
 
 export async function getSleeperConnection(): Promise<SleeperConnection | null> {

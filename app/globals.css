@@ -26,6 +26,13 @@
   --warn: #f5a623;
   --field: #10331f;
   --field-line: #2b5c3d;
+  /* Position identity colors (Sleeper-style coding) */
+  --pos-qb: #f4587a;
+  --pos-rb: #2dd4b0;
+  --pos-wr: #5aa9ff;
+  --pos-te: #f2a33c;
+  --pos-k: #a78bfa;
+  --pos-dst: #c08a5a;
 }
 
 [data-theme="light"] {
@@ -47,6 +54,12 @@
   --warn: #b97a10;
   --field: #dcefe2;
   --field-line: #a5cdb2;
+  --pos-qb: #cf2f56;
+  --pos-rb: #0f9a80;
+  --pos-wr: #2673d6;
+  --pos-te: #c07a14;
+  --pos-k: #7c5ce0;
+  --pos-dst: #96683c;
 }
 
 @media (prefers-color-scheme: light) {
@@ -69,6 +82,12 @@
     --warn: #b97a10;
     --field: #dcefe2;
     --field-line: #a5cdb2;
+    --pos-qb: #cf2f56;
+    --pos-rb: #0f9a80;
+    --pos-wr: #2673d6;
+    --pos-te: #c07a14;
+    --pos-k: #7c5ce0;
+    --pos-dst: #96683c;
   }
 }
 
@@ -91,6 +110,12 @@
   --color-warn: var(--warn);
   --color-field: var(--field);
   --color-field-line: var(--field-line);
+  --color-pos-qb: var(--pos-qb);
+  --color-pos-rb: var(--pos-rb);
+  --color-pos-wr: var(--pos-wr);
+  --color-pos-te: var(--pos-te);
+  --color-pos-k: var(--pos-k);
+  --color-pos-dst: var(--pos-dst);
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }

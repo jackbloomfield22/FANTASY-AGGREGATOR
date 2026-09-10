@@ -16,8 +16,8 @@ import type { FantasySyncResult } from "@/lib/providers/fantasy/base";
 import { buildSimulatedLiveLayer } from "@/lib/demo/liveSim";
 import {
   getDemoEpochOffsetMs,
+  getSimLiveEnabledAt,
   getSleeperConnection,
-  isSimulatedLive,
 } from "./session";
 
 /**
@@ -98,14 +98,17 @@ async function buildSleeperSnapshot(
       playerStats = [];
       liveSource = "none";
     }
-  } else if (await isSimulatedLive()) {
-    // No real live provider: fabricate a deterministic mid-Sunday over the
-    // user's real rosters (clearly badged as simulated in the UI).
-    liveSource = "demo";
-    const sim = buildSimulatedLiveLayer(sync.players, sync.week, Date.now());
-    games = sim.games;
-    playerStats = sim.playerStats;
-    alerts = collectLiveAlerts(`${username}:sim`, { games, stats: playerStats }, sync);
+  } else {
+    const simEnabledAt = await getSimLiveEnabledAt();
+    if (simEnabledAt !== null) {
+      // No real live provider: fabricate a deterministic mid-Sunday over the
+      // user's real rosters (clearly badged as simulated in the UI).
+      liveSource = "demo";
+      const sim = buildSimulatedLiveLayer(sync.players, sync.week, Date.now(), simEnabledAt);
+      games = sim.games;
+      playerStats = sim.playerStats;
+      alerts = collectLiveAlerts(`${username}:sim`, { games, stats: playerStats }, sync);
+    }
   }
 
   return {
