@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import type { PortfolioPlayer } from "@/lib/types";
-import { cn, formatPoints, formatSigned, gamePhaseLabel, kickoffLabel } from "@/lib/utils";
+import { cn, gamePhaseLabel, kickoffLabel } from "@/lib/utils";
 import { StatusBadge } from "@/components/ui/badges";
 import { statLineText } from "@/components/PlayerStatLine";
 import { LeagueChip } from "@/components/LeagueChip";
@@ -12,13 +12,12 @@ import { MiniFootballField } from "@/components/MiniFootballField";
 import { PlayerAvatar, POSITION_TEXT } from "@/components/PlayerAvatar";
 
 /**
- * One clean line per player, built to answer two questions at a glance:
- * is he playing right now, and how many points is he getting me?
+ * One row per player, with his outcome in EVERY league visible up front:
  *
- *   [ Name · pos/team ]  [ status + game ]  [ stat line ]  [ POINTS ]
+ *   [ Name · pos/team ]  [ status + game ]  [ stat line + league chips ]
  *
- * Tap the row to expand per-league detail (chips, exposure, mini field).
- * The name itself links to the full player page.
+ * Each chip is that league's own scored points (START green / BENCH gray).
+ * Tap the row to expand extras (exposure, mini field, detail link).
  */
 export function PlayerListRow({
   player,
@@ -33,7 +32,6 @@ export function PlayerListRow({
   const isLive = isRedZone || player.liveStatus === "live" || player.liveStatus === "halftime";
   const hasBall = game && isLive && game.possessionTeam === p.nflTeam;
   const opponent = game ? (game.homeTeam === p.nflTeam ? `vs ${game.awayTeam}` : `@ ${game.homeTeam}`) : null;
-  const showDash = player.portfolioImpact === 0 && player.benchPoints === 0 && !isLive && player.liveStatus !== "final";
 
   return (
     <div
@@ -55,7 +53,7 @@ export function PlayerListRow({
           aria-label={`${open ? "Hide" : "Show"} league details for ${p.fullName}`}
           className="absolute inset-0 h-full w-full cursor-pointer"
         />
-        <div className="pointer-events-none relative grid grid-cols-[1fr_auto] items-center gap-x-3 px-3.5 py-2.5 text-left md:grid-cols-[minmax(170px,230px)_150px_1fr_auto] md:gap-x-5">
+        <div className="pointer-events-none relative grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1.5 px-3.5 py-2.5 text-left md:grid-cols-[minmax(170px,220px)_140px_1fr_auto] md:gap-x-4">
         {/* WHO */}
         <span className="flex min-w-0 items-center gap-2.5">
           <PlayerAvatar player={p} size="md" />
@@ -122,32 +120,23 @@ export function PlayerListRow({
           ) : null}
         </span>
 
-        {/* DOING (desktop) */}
-        <span
-          className="tnum hidden truncate text-xs font-medium text-ink-dim md:block"
-          title={statLineText(p.position, player.stats)}
-        >
-          {statLineText(p.position, player.stats)}
+        {/* DOING + every league's outcome, always visible */}
+        <span className="col-span-2 min-w-0 md:col-span-1">
+          <span
+            className="tnum mb-1 hidden truncate text-xs font-medium text-ink-dim md:block"
+            title={statLineText(p.position, player.stats)}
+          >
+            {statLineText(p.position, player.stats)}
+          </span>
+          <span className="pointer-events-auto flex flex-wrap gap-1">
+            {player.leagues.map((ctx) => (
+              <LeagueChip key={ctx.leagueId} context={ctx} />
+            ))}
+          </span>
         </span>
 
-        {/* POINTS */}
-        <span className="flex items-center gap-2 justify-self-end">
-          <span className="text-right">
-            <span
-              className={cn(
-                "tnum block text-lg font-black leading-none",
-                player.portfolioImpact > 0 ? "text-win" : "text-ink-faint"
-              )}
-              title="Portfolio Impact — points this player is scoring you across every lineup where he starts."
-            >
-              {showDash ? "—" : formatSigned(player.portfolioImpact)}
-            </span>
-            {player.benchPoints > 0 ? (
-              <span className="tnum block text-[9px] font-medium text-ink-faint">
-                +{formatPoints(player.benchPoints)} bench
-              </span>
-            ) : null}
-          </span>
+        {/* expand control */}
+        <span className="col-start-2 row-start-1 flex items-center justify-self-end md:col-start-4 md:row-start-auto">
           <ChevronDown
             size={14}
             aria-hidden
@@ -162,11 +151,6 @@ export function PlayerListRow({
           <p className="tnum text-xs font-medium text-ink-dim md:hidden">
             {statLineText(p.position, player.stats)}
           </p>
-          <div className="flex flex-wrap gap-1.5">
-            {player.leagues.map((ctx) => (
-              <LeagueChip key={ctx.leagueId} context={ctx} />
-            ))}
-          </div>
           <p className="tnum text-[11px] text-ink-faint">
             Starting in {player.starterCount} of {player.totalLeagues} leagues · rostered in{" "}
             {player.rosteredCount} of {player.totalLeagues}

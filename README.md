@@ -88,8 +88,9 @@ Key rules the codebase follows:
 
 ```
 Fantasy:  Sleeper (connected) → Demo
-Live NFL: Sportradar (SPORTRADAR_API_KEY set) → Demo (for demo fantasy)
-                                              → none (for real fantasy)
+Live NFL: Sportradar (SPORTRADAR_API_KEY set)
+          → Sleeper weekly stats/schedule (always on for Sleeper users)
+          → Demo simulation (demo fantasy only)
 ```
 
 Simulated live stats are **never** mixed into real fantasy data: with Sleeper connected but no Sportradar key, the app shows Sleeper's real per-league points and matchup scores and labels the live feed as unavailable ("NO LIVE FEED" badge) instead of faking games.
@@ -135,7 +136,8 @@ Auth/entry is enforced in `proxy.ts` (Next.js middleware): protected routes requ
 | Integration | Status |
 | --- | --- |
 | Demo fantasy + demo live simulation | ✅ fully working, default |
-| Sleeper | ✅ real, public API: username → leagues, rosters, starters/bench, matchups, per-league scoring, external player IDs |
+| Sleeper (fantasy) | ✅ real, public API: username → leagues, rosters, starters/bench, matchups, per-league scoring, external player IDs |
+| Sleeper (live layer) | ✅ real weekly player stat lines, projections and game statuses from Sleeper's public stats/schedule endpoints — scored locally per league; no key needed. (No clock/possession/field position — that's Sportradar.) |
 | Sportradar NFL v7 | ✅ implemented, enabled by `SPORTRADAR_API_KEY` (verify endpoint payloads against your account's tier) |
 | Supabase auth + schema | ✅ implemented, enabled by env vars; full RLS in migrations |
 | Yahoo | 🟡 provider skeleton + OAuth URL builder; token exchange/import to be completed when credentials exist |

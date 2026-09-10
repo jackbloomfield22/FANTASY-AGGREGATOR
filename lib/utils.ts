@@ -28,6 +28,8 @@ export function gamePhaseLabel(game: NormalizedNFLGame): string {
     case "halftime":
       return "Halftime";
     case "live":
+      // Some live sources (Sleeper schedule) carry status but no clock.
+      if (game.quarter === null && game.clock === null) return "Live";
       return `${QUARTER_LABEL[game.quarter ?? 1] ?? `Q${game.quarter}`} · ${game.clock ?? ""}`.trim();
     case "scheduled":
       return kickoffLabel(game.kickoffAt);

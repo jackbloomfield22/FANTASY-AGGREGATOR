@@ -14,7 +14,6 @@ import { cookies } from "next/headers";
 export const DEMO_COOKIE = "fa-demo";
 export const DEMO_EPOCH_COOKIE = "fa-demo-epoch";
 export const SLEEPER_COOKIE = "fa-sleeper";
-export const SIM_LIVE_COOKIE = "fa-sim-live";
 
 export interface SleeperConnection {
   username: string;
@@ -34,21 +33,6 @@ export async function getDemoEpochOffsetMs(): Promise<number> {
   const raw = store.get(DEMO_EPOCH_COOKIE)?.value;
   const n = raw ? Number(raw) : 0;
   return Number.isFinite(n) ? n : 0;
-}
-
-/**
- * When the simulated live Sunday was enabled (ms epoch), or null when off.
- * The timestamp anchors the simulation so the day plays forward once.
- */
-export async function getSimLiveEnabledAt(): Promise<number | null> {
-  const store = await cookies();
-  const raw = store.get(SIM_LIVE_COOKIE)?.value;
-  if (!raw) return null;
-  const n = Number(raw);
-  // Legacy "1" cookies (pre-timestamp) anchor to a fixed recent moment so
-  // they still resolve to a valid, monotonic simulation.
-  if (!Number.isFinite(n) || n <= 0) return Date.UTC(2026, 8, 6, 18, 0, 0);
-  return n;
 }
 
 export async function getSleeperConnection(): Promise<SleeperConnection | null> {

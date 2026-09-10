@@ -18,7 +18,7 @@ export type MatchupStatus = "winning" | "losing" | "tossup" | "final";
 
 export type ProviderId = "sleeper" | "yahoo" | "espn" | "demo";
 
-export type LiveProviderId = "sportradar" | "demo" | "none";
+export type LiveProviderId = "sportradar" | "sleeper" | "demo" | "none";
 
 // ---------------------------------------------------------------------------
 // Canonical player

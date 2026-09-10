@@ -7,18 +7,16 @@ import type {
   PortfolioAlert,
   PortfolioSnapshot,
 } from "@/lib/types";
+import type { RawStatLine } from "@/lib/types";
 import { buildDemoSnapshot } from "@/lib/demo/simulation";
 import { sleeperProvider } from "@/lib/providers/fantasy/sleeper";
 import { yahooProvider } from "@/lib/providers/fantasy/yahoo";
 import { sportradarProvider } from "@/lib/providers/live/sportradar";
+import { sleeperLiveProvider } from "@/lib/providers/live/sleeperStats";
 import { deriveLiveAlerts, LiveState } from "@/lib/alerts/engine";
+import { calculateFantasyPoints, round1 } from "@/lib/scoring/engine";
 import type { FantasySyncResult } from "@/lib/providers/fantasy/base";
-import { buildSimulatedLiveLayer } from "@/lib/demo/liveSim";
-import {
-  getDemoEpochOffsetMs,
-  getSimLiveEnabledAt,
-  getSleeperConnection,
-} from "./session";
+import { getDemoEpochOffsetMs, getSleeperConnection } from "./session";
 
 /**
  * Server-side snapshot assembly: picks the right fantasy + live providers,
@@ -26,8 +24,8 @@ import {
  *
  * Provider priority (per product spec):
  *   Fantasy: Sleeper (when connected) -> Demo
- *   Live NFL: Sportradar (when SPORTRADAR_API_KEY) -> Demo (demo fantasy) /
- *             none (real fantasy — never mix simulated stats into real data)
+ *   Live NFL: Sportradar (when SPORTRADAR_API_KEY) ->
+ *             Sleeper's real weekly stats/schedule (always, for Sleeper users)
  */
 
 export async function getPortfolioSnapshot(): Promise<PortfolioSnapshot> {
@@ -99,21 +97,59 @@ async function buildSleeperSnapshot(
       liveSource = "none";
     }
   } else {
-    const simEnabledAt = await getSimLiveEnabledAt();
-    if (simEnabledAt !== null) {
-      // No real live provider: fabricate a deterministic mid-Sunday over the
-      // user's real rosters (clearly badged as simulated in the UI).
-      liveSource = "demo";
-      const sim = buildSimulatedLiveLayer(sync.players, sync.week, Date.now(), simEnabledAt);
-      games = sim.games;
-      playerStats = sim.playerStats;
-      alerts = collectLiveAlerts(`${username}:sim`, { games, stats: playerStats }, sync);
+    // Real, current-week data straight from Sleeper's public API: raw
+    // per-player stat lines (scored locally per league), game statuses from
+    // the schedule, and projections for real projected totals.
+    try {
+      const neededSleeperIds = new Set(
+        sync.players
+          .map((p) => p.providerIds.sleeper)
+          .filter((id): id is string => Boolean(id))
+      );
+      const [schedule, weekStats, projections] = await Promise.all([
+        sleeperLiveProvider.getSchedule(sync.season, sync.week),
+        sleeperLiveProvider.getWeekStats(sync.season, sync.week, neededSleeperIds),
+        sleeperLiveProvider.getWeekProjections(sync.season, sync.week, neededSleeperIds),
+      ]);
+      games = schedule;
+
+      const gameByTeam = new Map<string, NormalizedNFLGame>();
+      for (const g of schedule) {
+        gameByTeam.set(g.homeTeam, g);
+        gameByTeam.set(g.awayTeam, g);
+      }
+      const updatedAt = new Date().toISOString();
+      playerStats = [];
+      for (const player of sync.players) {
+        const sleeperId = player.providerIds.sleeper;
+        const stats = sleeperId ? weekStats.get(sleeperId) : undefined;
+        if (!stats) continue;
+        const game = gameByTeam.get(player.nflTeam);
+        playerStats.push({
+          playerId: player.id,
+          gameId: game?.id ?? `slg-w${sync.week}-${player.nflTeam}`,
+          stats,
+          updatedAt,
+        });
+      }
+
+      liveSource = "sleeper";
+      alerts = collectLiveAlerts(username, { games, stats: playerStats }, sync);
+      applyProjections(sync, projections);
+    } catch (err) {
+      console.warn(
+        "[live] Sleeper stats refresh failed:",
+        err instanceof Error ? err.message : err
+      );
+      games = [];
+      playerStats = [];
+      liveSource = "none";
     }
   }
 
   return {
     meta: {
-      mode: liveSource === "sportradar" ? "live" : "mixed",
+      mode: liveSource === "none" ? "mixed" : "live",
       fantasySource: "sleeper",
       liveSource,
       week: sync.week,
@@ -130,6 +166,43 @@ async function buildSleeperSnapshot(
     playerStats,
     alerts,
   };
+}
+
+/**
+ * Replace Sleeper's degenerate "projected = current points" shim with real
+ * projections: each team's projected total is the sum of its starters'
+ * projected stat lines scored under that league's own settings.
+ */
+function applyProjections(
+  sync: FantasySyncResult,
+  projections: Map<string, RawStatLine>
+): void {
+  if (projections.size === 0) return;
+  const leagueById = new Map(sync.leagues.map((l) => [l.id, l]));
+  const playerById = new Map(sync.players.map((p) => [p.id, p]));
+
+  const projectTeam = (teamId: string, leagueId: string): number | null => {
+    const league = leagueById.get(leagueId);
+    if (!league) return null;
+    let total = 0;
+    let matched = 0;
+    for (const slot of sync.rosterSlots) {
+      if (slot.fantasyTeamId !== teamId || !slot.isStarter) continue;
+      const sleeperId = playerById.get(slot.playerId)?.providerIds.sleeper;
+      const proj = sleeperId ? projections.get(sleeperId) : undefined;
+      if (!proj) continue;
+      matched += 1;
+      total += calculateFantasyPoints(proj, league.scoringSettings);
+    }
+    return matched > 0 ? round1(total) : null;
+  };
+
+  for (const matchup of sync.matchups) {
+    const user = projectTeam(matchup.userTeamId, matchup.leagueId);
+    const opp = projectTeam(matchup.opponentTeamId, matchup.leagueId);
+    if (user !== null) matchup.userProjected = user;
+    if (opp !== null) matchup.opponentProjected = opp;
+  }
 }
 
 // ---------------------------------------------------------------------------

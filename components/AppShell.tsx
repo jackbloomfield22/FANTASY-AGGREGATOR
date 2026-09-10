@@ -104,17 +104,6 @@ function ModeBadge() {
       </span>
     );
   }
-  if (snapshot.meta.mode === "mixed" && snapshot.meta.liveSource === "demo") {
-    return (
-      <span
-        title="Your leagues and rosters are real (Sleeper); the NFL games and stats are a simulated Sunday. Turn this off in Settings."
-        className="inline-flex items-center gap-1.5 rounded-md border border-warn/40 bg-warn/10 px-2 py-1 text-[10px] font-bold tracking-wider text-warn"
-      >
-        <span aria-hidden className="live-dot inline-block h-1.5 w-1.5 rounded-full bg-warn" />
-        SIM LIVE
-      </span>
-    );
-  }
   if (snapshot.meta.liveSource === "none") {
     return (
       <span

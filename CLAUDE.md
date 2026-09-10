@@ -26,7 +26,7 @@ npm run build      # production build — must pass before pushing
 - **Portfolio impact excludes bench** (starters-only sum); bench points shown separately. Exposure = rostered/total and starting/total. These are tested — keep tests passing.
 - **One batched snapshot**: the UI polls `GET /api/portfolio` only. No per-player fetches, no N+1.
 - **Demo is deterministic**: `lib/demo/simulation.ts` is a pure function of wall-clock time on a 50-min scripted cycle. No `Math.random()` at request time; new demo data must keep `simulation.test.ts` determinism tests green.
-- **No scraping** of private/undocumented fantasy endpoints (ESPN stays "Coming Soon" until a supported API exists). No fake OAuth.
+- **No scraping** of authenticated/private fantasy endpoints (ESPN stays "Coming Soon" until a supported API exists). No fake OAuth. Sleeper's public, unauthenticated stats/projections/schedule endpoints (`api.sleeper.app`) are allowed by owner decision — they power the real live layer; parse them defensively (they're not in Sleeper's written docs).
 - **Secrets are server-only** (`SPORTRADAR_API_KEY`, Yahoo credentials): only touched in server routes / `lib/server/*` / provider modules with `import "server-only"` where applicable.
 
 ## Conventions
