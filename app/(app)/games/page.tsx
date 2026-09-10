@@ -5,25 +5,7 @@ import { DataGate } from "@/components/DataGate";
 import { PageHeader } from "@/components/PageHeader";
 import { NFLGameCard } from "@/components/NFLGameCard";
 import { EmptyState } from "@/components/ui/states";
-import { usePortfolio } from "@/components/providers/PortfolioProvider";
 import { track } from "@/lib/analytics";
-
-/** One-click simulated Sunday when no live NFL provider is configured. */
-function SimulateSundayButton() {
-  const { refresh } = usePortfolio();
-  return (
-    <button
-      type="button"
-      onClick={async () => {
-        await fetch("/api/demo/simulate", { method: "POST" });
-        await refresh();
-      }}
-      className="rounded-md bg-accent px-4 py-2 text-xs font-bold uppercase tracking-wide text-accent-ink hover:opacity-90"
-    >
-      Simulate a live Sunday
-    </button>
-  );
-}
 
 export default function GamesPage() {
   useEffect(() => {
@@ -45,10 +27,9 @@ export default function GamesPage() {
                 title={snapshot.meta.liveSource === "none" ? "No live NFL data configured" : "No games this week"}
                 message={
                   snapshot.meta.liveSource === "none"
-                    ? "Your fantasy data is real, but no live NFL provider is set up. Add SPORTRADAR_API_KEY for real live data — or drop your rosters into a simulated mid-Sunday to see everything in motion."
+                    ? "Your fantasy scoring is live from Sleeper. For real NFL game detail here (score, clock, possession, field position), add SPORTRADAR_API_KEY."
                     : "Check back when the NFL schedule for your week is available."
                 }
-                action={snapshot.meta.liveSource === "none" ? <SimulateSundayButton /> : undefined}
               />
             </div>
           );

@@ -33,14 +33,7 @@ export default function OnboardingPage() {
       <ComingSoonProvider name="Yahoo" note="OAuth integration lands once credentials are configured." />
       <ComingSoonProvider name="NFL Fantasy" note="Planned after Yahoo." />
 
-      <div className="rounded-xl border border-dashed border-edge bg-surface p-4 text-center">
-        <p className="text-sm font-semibold text-ink">Want to see everything moving?</p>
-        <p className="mt-0.5 text-xs text-ink-dim">
-          Once Sleeper is connected, hit <strong className="text-warn">Simulate live Sunday</strong>{" "}
-          on the card above — your real rosters, dropped into live games with scores, drives and
-          red-zone moments.
-        </p>
-      </div>
+
     </div>
   );
 }

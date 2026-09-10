@@ -7,23 +7,22 @@ import { track } from "@/lib/analytics";
 
 /**
  * The front door: enter a Sleeper username to step straight into your real
- * portfolio, or take the demo. Shown to everyone without a session.
+ * portfolio. Shown to everyone without a session.
  */
 export function EntryGate() {
   const router = useRouter();
   const [username, setUsername] = useState("");
-  const [busy, setBusy] = useState<"connect" | "simulate" | null>(null);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  /** Connect the Sleeper account; optionally drop it into a simulated live Sunday. */
-  const enter = async (simulate: boolean) => {
+  const enter = async () => {
     if (username.trim().length === 0) {
       setError("Enter your Sleeper username first.");
       return;
     }
-    setBusy(simulate ? "simulate" : "connect");
+    setBusy(true);
     setError(null);
-    track("fantasy_connection_started", { provider: "sleeper", from: "entry", simulate });
+    track("fantasy_connection_started", { provider: "sleeper", from: "entry" });
     try {
       const res = await fetch("/api/connections/sleeper", {
         method: "POST",
@@ -35,17 +34,13 @@ export function EntryGate() {
         setError(body.error ?? "Could not connect to Sleeper.");
         return;
       }
-      if (simulate) {
-        track("demo_started", { from: "entry" });
-        await fetch("/api/demo/simulate", { method: "POST" });
-      }
-      track("fantasy_connection_completed", { provider: "sleeper", from: "entry", simulate });
+      track("fantasy_connection_completed", { provider: "sleeper", from: "entry" });
       router.push("/dashboard");
       router.refresh();
     } catch {
       setError("Network error reaching Sleeper — try again.");
     } finally {
-      setBusy(null);
+      setBusy(false);
     }
   };
 
@@ -54,7 +49,7 @@ export function EntryGate() {
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          void enter(false);
+          void enter();
         }}
       >
         <label htmlFor="sleeper-username" className="block text-left text-xs font-bold uppercase tracking-wider text-ink-dim">
@@ -79,32 +74,16 @@ export function EntryGate() {
         ) : null}
         <button
           type="submit"
-          disabled={busy !== null || username.trim().length === 0}
+          disabled={busy || username.trim().length === 0}
           className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-bold uppercase tracking-wide text-accent-ink hover:opacity-90 disabled:opacity-50"
         >
-          {busy === "connect" ? <Loader2 size={15} className="animate-spin" aria-hidden /> : null}
+          {busy ? <Loader2 size={15} className="animate-spin" aria-hidden /> : null}
           Enter my Sunday
         </button>
       </form>
 
-      <div className="my-4 flex items-center gap-3" aria-hidden>
-        <span className="h-px flex-1 bg-edge" />
-        <span className="text-[10px] font-bold tracking-wider text-ink-faint">OR</span>
-        <span className="h-px flex-1 bg-edge" />
-      </div>
-
-      <button
-        type="button"
-        onClick={() => void enter(true)}
-        disabled={busy !== null}
-        className="flex w-full items-center justify-center gap-2 rounded-lg border border-warn/40 bg-warn/10 px-4 py-2.5 text-sm font-bold uppercase tracking-wide text-warn hover:bg-warn/20 disabled:opacity-50"
-      >
-        {busy === "simulate" ? <Loader2 size={15} className="animate-spin" aria-hidden /> : null}
-        Simulate live Sunday
-      </button>
-      <p className="mt-2 text-center text-[11px] text-ink-faint">
-        Your real leagues and rosters, dropped into a simulated mid-Sunday — scores, drives and
-        stats all moving.
+      <p className="mt-3 text-center text-[11px] text-ink-faint">
+        Your leagues, rosters, matchups and live scoring — all in one place, all season long.
       </p>
     </div>
   );

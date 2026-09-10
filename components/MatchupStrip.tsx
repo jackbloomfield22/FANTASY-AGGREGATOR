@@ -9,7 +9,16 @@ import { MatchupStatusBadge } from "@/components/ui/badges";
  * All matchups in one horizontal strip: league, score, status, win chance.
  * The fastest possible answer to "am I winning?" — on every screen size.
  */
-export function MatchupStrip({ matchups, className }: { matchups: MatchupView[]; className?: string }) {
+export function MatchupStrip({
+  matchups,
+  showRemaining = false,
+  className,
+}: {
+  matchups: MatchupView[];
+  /** Show "players left" counts (only meaningful when game data exists). */
+  showRemaining?: boolean;
+  className?: string;
+}) {
   if (matchups.length === 0) return null;
   return (
     <ul className={cn("scroll-thin flex snap-x gap-2 overflow-x-auto pb-1.5", className)}>
@@ -35,7 +44,11 @@ export function MatchupStrip({ matchups, className }: { matchups: MatchupView[];
                 <span className={!ahead ? "text-ink" : "text-ink-dim"}>{formatPoints(matchup.opponentScore)}</span>
               </span>
               <span className="mt-0.5 flex items-center justify-between gap-2">
-                <span className="truncate text-[10px] text-ink-faint">vs {opponentTeam.name}</span>
+                <span className="truncate text-[10px] text-ink-faint">
+                  {showRemaining && !isFinal
+                    ? `${m.userRemaining} left · ${m.opponentRemaining} left`
+                    : `vs ${opponentTeam.name}`}
+                </span>
                 {!isFinal && pct !== null ? (
                   <span
                     className={cn(

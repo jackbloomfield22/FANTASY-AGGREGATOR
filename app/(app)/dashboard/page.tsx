@@ -4,22 +4,26 @@ import Link from "next/link";
 import { DataGate } from "@/components/DataGate";
 import { PortfolioSummary } from "@/components/PortfolioSummary";
 import { MatchupStrip } from "@/components/MatchupStrip";
+import { HomePlayersPanel } from "@/components/HomePlayersPanel";
 import { ImportantGameCard } from "@/components/NFLGameCard";
-import { PlayerCard } from "@/components/PlayerCard";
 import { LiveFeed } from "@/components/LiveFeed";
-import { EmptyState } from "@/components/ui/states";
 import { kickoffLabel } from "@/lib/utils";
 
 /**
- * Your Sunday, in reading order:
- *   the four numbers → am I winning? → what's happening → the game to watch.
+ * The one-stop Sunday page, in a fantasy player's reading order:
+ *   1. the four numbers        — how is my day going?
+ *   2. every matchup           — am I winning?
+ *   3. my player leaderboard   — who's getting me points right now,
+ *      and who is yet to play?
+ *   4. live activity + the game to watch.
  */
 export default function DashboardPage() {
   return (
     <DataGate>
       {(portfolio, snapshot) => {
-        const { summary, mostImportantGame, biggestSwing, matchups } = portfolio;
+        const { summary, mostImportantGame, matchups, players } = portfolio;
         const anyLive = summary.gamesLive > 0;
+        const hasGameData = snapshot.games.length > 0;
         const nextKickoff = portfolio.games
           .map((g) => g.game)
           .filter((g) => g.status === "scheduled")
@@ -48,42 +52,27 @@ export default function DashboardPage() {
                     All matchups →
                   </Link>
                 </div>
-                <MatchupStrip matchups={matchups} />
+                <MatchupStrip matchups={matchups} showRemaining={hasGameData && anyLive} />
               </section>
             ) : null}
 
-            <div className="grid gap-4 lg:grid-cols-3">
-              <div className="order-2 space-y-4 lg:order-1 lg:col-span-2">
-                <section aria-label="Live activity">
-                  <div className="mb-2 flex items-center justify-between">
-                    <h2 className="text-[11px] font-bold tracking-[0.14em] text-ink-faint">
-                      LIVE ACTIVITY
-                    </h2>
-                    <Link href="/players" className="text-[11px] font-semibold text-accent hover:underline">
-                      All players →
-                    </Link>
-                  </div>
-                  <LiveFeed alerts={snapshot.alerts} limit={8} />
-                </section>
+            <div className="grid gap-4 lg:grid-cols-5">
+              <div className="lg:col-span-3">
+                <HomePlayersPanel players={players} />
               </div>
 
-              <div className="order-1 space-y-4 lg:order-2">
-                {mostImportantGame ? (
-                  <ImportantGameCard ranked={mostImportantGame} />
-                ) : (
-                  <EmptyState
-                    title="No NFL games with your players"
-                    message="Once games involve your rostered players, the most important one shows here."
-                  />
-                )}
-                {biggestSwing ? (
-                  <section aria-label="Biggest swing player">
-                    <h2 className="mb-2 text-[11px] font-bold tracking-[0.14em] text-ink-faint">
-                      BIGGEST SWING
-                    </h2>
-                    <PlayerCard player={biggestSwing} />
+              <div className="space-y-4 lg:col-span-2">
+                {snapshot.alerts.length > 0 ? (
+                  <section aria-label="Live activity">
+                    <div className="mb-1.5 flex items-center justify-between">
+                      <h2 className="text-[11px] font-bold tracking-[0.14em] text-ink-faint">
+                        LIVE ACTIVITY
+                      </h2>
+                    </div>
+                    <LiveFeed alerts={snapshot.alerts} limit={6} />
                   </section>
                 ) : null}
+                {mostImportantGame ? <ImportantGameCard ranked={mostImportantGame} /> : null}
               </div>
             </div>
           </div>
