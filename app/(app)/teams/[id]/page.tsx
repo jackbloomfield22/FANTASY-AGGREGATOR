@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { DataGate } from "@/components/DataGate";
 import { EmptyState } from "@/components/ui/states";
-import { WinProbability } from "@/components/FantasyMatchupCard";
+import { ScoreStack, WinProbability } from "@/components/FantasyMatchupCard";
 import { MatchupStatusBadge } from "@/components/ui/badges";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { statLineText } from "@/components/PlayerStatLine";
@@ -307,19 +307,23 @@ export default function MatchupDetailPage({ params }: { params: Promise<{ id: st
                   <p className="truncate text-base font-bold text-ink">{opponentTeam.name}</p>
                   <p className="text-[11px] text-ink-faint">{opponentTeam.ownerName}</p>
                 </div>
-                <span className={cn("tnum text-4xl font-black leading-none", matchup.userScore >= matchup.opponentScore ? "text-ink" : "text-ink-dim")}>
-                  {formatPoints(matchup.userScore)}
-                </span>
+                <ScoreStack
+                  score={matchup.userScore}
+                  projected={matchup.userProjected}
+                  remaining={view.userRemaining}
+                  leading={matchup.userScore >= matchup.opponentScore}
+                  size="lg"
+                />
                 <span className="px-2 text-sm font-bold text-ink-faint">vs</span>
-                <span className={cn("tnum text-right text-4xl font-black leading-none", matchup.opponentScore >= matchup.userScore ? "text-ink" : "text-ink-dim")}>
-                  {formatPoints(matchup.opponentScore)}
-                </span>
+                <ScoreStack
+                  score={matchup.opponentScore}
+                  projected={matchup.opponentProjected}
+                  remaining={view.opponentRemaining}
+                  leading={matchup.opponentScore >= matchup.userScore}
+                  align="right"
+                  size="lg"
+                />
               </div>
-              <p className="tnum mt-2 text-[11px] font-medium text-ink-dim">
-                Projected {formatPoints(matchup.userProjected)} — {formatPoints(matchup.opponentProjected)}
-                <span className="mx-1.5 text-ink-faint">·</span>
-                Yet to finish — You: {view.userRemaining} · Opp: {view.opponentRemaining}
-              </p>
               {!isFinal && matchup.winProbability !== null ? (
                 <WinProbability probability={matchup.winProbability} className="mt-2" />
               ) : null}

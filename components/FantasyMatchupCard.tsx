@@ -30,6 +30,69 @@ export function WinProbability({ probability, className }: { probability: number
   );
 }
 
+/**
+ * One team's score, stacked on two clearly-labeled lines:
+ *   NOW   — points already on the board (big)
+ *   PROJ  — where the lineup is projected to land (dim, with players left)
+ * plus a thin "pace" bar showing how much of the projection is banked.
+ */
+export function ScoreStack({
+  score,
+  projected,
+  remaining,
+  leading,
+  align = "left",
+  size = "md",
+}: {
+  score: number;
+  projected: number;
+  remaining: number;
+  leading: boolean;
+  align?: "left" | "right";
+  size?: "md" | "lg";
+}) {
+  const right = align === "right";
+  const pct = projected > 0 ? Math.min(100, Math.round((score / projected) * 100)) : score > 0 ? 100 : 0;
+  return (
+    <div className={cn("min-w-0", right && "text-right")}>
+      <p className={cn("flex items-baseline gap-1.5", right && "flex-row-reverse")}>
+        <span className="text-[8px] font-bold tracking-[0.18em] text-ink-faint">NOW</span>
+        <span
+          className={cn(
+            "tnum font-black leading-none",
+            size === "lg" ? "text-4xl" : "text-3xl",
+            leading ? "text-ink" : "text-ink-dim"
+          )}
+        >
+          {formatPoints(score)}
+        </span>
+      </p>
+      <p className={cn("mt-1.5 flex items-baseline gap-1.5", right && "flex-row-reverse")}>
+        <span className="rounded border border-edge bg-surface-2 px-1 py-px text-[8px] font-bold tracking-[0.18em] text-ink-faint">
+          PROJ
+        </span>
+        <span className="tnum text-sm font-bold text-ink-dim">{formatPoints(projected)}</span>
+        {remaining > 0 ? (
+          <span className="tnum text-[9px] font-medium text-ink-faint">{remaining} to play</span>
+        ) : null}
+      </p>
+      <div
+        className="mt-1.5 h-1 overflow-hidden rounded-full bg-surface-3"
+        role="meter"
+        aria-valuenow={pct}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={`${pct}% of projected points scored`}
+      >
+        <div
+          className={cn("h-full rounded-full", leading ? "bg-win" : "bg-ink-faint/40", right && "ml-auto")}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
 export function FantasyMatchupCard({ view, className }: { view: MatchupView; className?: string }) {
   const { matchup, league, userTeam, opponentTeam } = view;
   const isFinal = matchup.status === "final";
@@ -64,30 +127,21 @@ export function FantasyMatchupCard({ view, className }: { view: MatchupView; cla
           <p className="text-[11px] text-ink-faint">{opponentTeam.ownerName}</p>
         </div>
 
-        <span
-          className={cn(
-            "tnum text-3xl font-black leading-none",
-            matchup.userScore >= matchup.opponentScore ? "text-ink" : "text-ink-dim"
-          )}
-        >
-          {formatPoints(matchup.userScore)}
-        </span>
+        <ScoreStack
+          score={matchup.userScore}
+          projected={matchup.userProjected}
+          remaining={view.userRemaining}
+          leading={matchup.userScore >= matchup.opponentScore}
+        />
         <span className="px-1 text-xs font-bold text-ink-faint">vs</span>
-        <span
-          className={cn(
-            "tnum text-right text-3xl font-black leading-none",
-            matchup.opponentScore >= matchup.userScore ? "text-ink" : "text-ink-dim"
-          )}
-        >
-          {formatPoints(matchup.opponentScore)}
-        </span>
+        <ScoreStack
+          score={matchup.opponentScore}
+          projected={matchup.opponentProjected}
+          remaining={view.opponentRemaining}
+          leading={matchup.opponentScore >= matchup.userScore}
+          align="right"
+        />
       </div>
-
-      <p className="tnum text-[11px] font-medium text-ink-dim">
-        Projected: {formatPoints(matchup.userProjected)} — {formatPoints(matchup.opponentProjected)}
-        <span className="mx-1.5 text-ink-faint">·</span>
-        Remaining — You: {view.userRemaining} · Opp: {view.opponentRemaining}
-      </p>
 
       {!isFinal && matchup.winProbability !== null ? (
         <WinProbability probability={matchup.winProbability} />

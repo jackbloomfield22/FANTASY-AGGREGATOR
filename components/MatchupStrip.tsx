@@ -43,6 +43,16 @@ export function MatchupStrip({
                 <span className="mx-1 text-sm text-ink-faint">—</span>
                 <span className={!ahead ? "text-ink" : "text-ink-dim"}>{formatPoints(matchup.opponentScore)}</span>
               </span>
+              {!isFinal ? (
+                <span className="tnum mt-1 flex items-center gap-1 text-[10px] font-semibold text-ink-dim">
+                  <span className="rounded border border-edge bg-surface-2 px-1 text-[7px] font-bold tracking-[0.18em] text-ink-faint">
+                    PROJ
+                  </span>
+                  {formatPoints(matchup.userProjected)}
+                  <span className="text-ink-faint">—</span>
+                  {formatPoints(matchup.opponentProjected)}
+                </span>
+              ) : null}
               <span className="mt-0.5 flex items-center justify-between gap-2">
                 <span className="truncate text-[10px] text-ink-faint">
                   {showRemaining && !isFinal

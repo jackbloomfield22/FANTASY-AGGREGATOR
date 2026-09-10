@@ -8,9 +8,10 @@ import { DataGate } from "@/components/DataGate";
 import { PageHeader } from "@/components/PageHeader";
 import { PlayerAvatar, POSITION_TEXT } from "@/components/PlayerAvatar";
 import { statLineText } from "@/components/PlayerStatLine";
+import { LeagueScoreChips } from "@/components/LeagueChip";
 import { EmptyState } from "@/components/ui/states";
 import { LiveIndicator } from "@/components/ui/badges";
-import { cn, formatPoints, gamePhaseLabel, kickoffLabel, POSITION_ORDER } from "@/lib/utils";
+import { cn, gamePhaseLabel, kickoffLabel, POSITION_ORDER } from "@/lib/utils";
 import { track } from "@/lib/analytics";
 
 /**
@@ -40,7 +41,7 @@ function sortGamePlayers(players: PortfolioPlayer[]): PortfolioPlayer[] {
 function PlayerRow({ p }: { p: PortfolioPlayer }) {
   const line = statLineText(p.player.position, p.stats);
   return (
-    <li className="flex items-center gap-2.5 px-3 py-1.5">
+    <li className="flex items-start gap-2.5 px-3 py-1.5">
       <PlayerAvatar player={p.player} size="sm" className="h-6 w-6 text-[9px]" />
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-1.5">
@@ -50,15 +51,6 @@ function PlayerRow({ p }: { p: PortfolioPlayer }) {
           >
             {p.player.fullName}
           </Link>
-          {p.starterCount > 0 ? (
-            <span className="shrink-0 rounded border border-win/40 bg-win/10 px-1 py-px text-[8px] font-bold tracking-wider text-win">
-              START{p.starterCount > 1 ? ` ×${p.starterCount}` : ""}
-            </span>
-          ) : (
-            <span className="shrink-0 rounded border border-edge bg-surface-2 px-1 py-px text-[8px] font-bold tracking-wider text-ink-faint">
-              BENCH{p.rosteredCount > 1 ? ` ×${p.rosteredCount}` : ""}
-            </span>
-          )}
         </span>
         <span className="tnum block truncate text-[10px] text-ink-faint">
           <span className={cn("font-bold", POSITION_TEXT[p.player.position])}>
@@ -68,15 +60,8 @@ function PlayerRow({ p }: { p: PortfolioPlayer }) {
           {p.player.nflTeam}
           {line !== "—" ? ` · ${line}` : ""}
         </span>
-      </span>
-      <span className="tnum shrink-0 text-right text-xs font-bold text-ink">
-        {p.pointsPerLineup > 0 ? (
-          formatPoints(p.pointsPerLineup)
-        ) : p.projectedPerLineup ? (
-          <span className="font-medium text-ink-faint">proj {formatPoints(p.projectedPerLineup)}</span>
-        ) : (
-          <span className="text-ink-faint">—</span>
-        )}
+        {/* His outcome in each league — not a "START ×2" rollup. */}
+        <LeagueScoreChips contexts={p.leagues} className="mt-1" />
       </span>
     </li>
   );
