@@ -80,11 +80,34 @@ export function normalizeScheduleGame(raw: Json, week: number): NormalizedNFLGam
   const away = canonTeam(raw?.away ?? raw?.away_team ?? raw?.awayTeam);
   if (!home || !away) return null;
   const status = normalizeGameStatus(raw?.status);
+  // Kickoff: prefer a real timestamp (epoch or ISO datetime); a date-only
+  // string still anchors the game to its day, but the TIME is unknown and
+  // must never be displayed as if it were real.
   let kickoffAt = new Date().toISOString();
-  const dateRaw = raw?.date ?? raw?.start_time ?? raw?.kickoff;
-  if (dateRaw) {
-    const d = new Date(dateRaw);
-    if (!Number.isNaN(d.getTime())) kickoffAt = d.toISOString();
+  let kickoffTimeKnown = false;
+  let kickoffDate: string | null = null;
+  for (const cand of [raw?.start_time, raw?.kickoff, raw?.date]) {
+    if (typeof cand === "number" && Number.isFinite(cand) && cand > 1e9) {
+      const d = new Date(cand > 1e12 ? cand : cand * 1000);
+      if (!Number.isNaN(d.getTime())) {
+        kickoffAt = d.toISOString();
+        kickoffTimeKnown = true;
+        break;
+      }
+    } else if (typeof cand === "string" && cand) {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(cand)) {
+        kickoffDate = cand;
+        // Placeholder instant for chronological ordering only (~1pm ET).
+        kickoffAt = `${cand}T17:00:00.000Z`;
+        break;
+      }
+      const d = new Date(cand);
+      if (!Number.isNaN(d.getTime())) {
+        kickoffAt = d.toISOString();
+        kickoffTimeKnown = true;
+        break;
+      }
+    }
   }
   const num = (v: unknown): number => (typeof v === "number" && Number.isFinite(v) ? v : 0);
   return {
@@ -106,6 +129,8 @@ export function normalizeScheduleGame(raw: Json, week: number): NormalizedNFLGam
     distance: null,
     redZone: false,
     kickoffAt,
+    kickoffTimeKnown,
+    kickoffDate,
     driveSummary: null,
     updatedAt: new Date().toISOString(),
   };

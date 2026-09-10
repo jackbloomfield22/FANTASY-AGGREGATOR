@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { PortfolioPlayer } from "@/lib/types";
-import { cn, formatPoints, gamePhaseLabel, kickoffLabel } from "@/lib/utils";
+import { cn, formatPoints, gameKickoffLabel, gamePhaseLabel } from "@/lib/utils";
 import { PlayerAvatar, POSITION_TEXT } from "@/components/PlayerAvatar";
 import { statLineText } from "@/components/PlayerStatLine";
 import { LeagueScoreChips } from "@/components/LeagueChip";
@@ -139,8 +139,8 @@ export function HomePlayersPanel({
                   <span className="text-xs font-semibold text-ink">{p.player.fullName}</span>
                   <span className="tnum text-[10px] text-ink-faint">
                     {[
-                      p.game ? kickoffLabel(p.game.kickoffAt) : null,
-                      p.projectedImpact > 0 ? `proj ${formatPoints(p.projectedImpact)}` : null,
+                      p.game ? gameKickoffLabel(p.game) : null,
+                      p.projectedPerLineup ? `proj ${formatPoints(p.projectedPerLineup)}` : null,
                     ]
                       .filter(Boolean)
                       .join(" · ")}

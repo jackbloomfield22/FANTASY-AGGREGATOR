@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import type { PortfolioPlayer } from "@/lib/types";
-import { cn, gamePhaseLabel, kickoffLabel } from "@/lib/utils";
+import { cn, gameKickoffLabel, gamePhaseLabel } from "@/lib/utils";
 import { StatusBadge } from "@/components/ui/badges";
 import { statLineText } from "@/components/PlayerStatLine";
 import { LeagueChip } from "@/components/LeagueChip";
@@ -83,7 +83,7 @@ export function PlayerListRow({
               {opponent ? ` ${opponent}` : ""}
               <span className="md:hidden">
                 {game
-                  ? ` · ${game.status === "scheduled" ? kickoffLabel(game.kickoffAt) : gamePhaseLabel(game)}`
+                  ? ` · ${game.status === "scheduled" ? gameKickoffLabel(game) : gamePhaseLabel(game)}`
                   : ""}
                 {isRedZone ? " · " : ""}
                 {isRedZone ? <span className="font-bold text-redzone">RED ZONE</span> : null}
@@ -99,7 +99,7 @@ export function PlayerListRow({
             <span className="tnum truncate text-[11px] font-medium text-ink-dim">
               {game
                 ? game.status === "scheduled"
-                  ? kickoffLabel(game.kickoffAt)
+                  ? gameKickoffLabel(game)
                   : game.status === "live"
                     ? gamePhaseLabel(game)
                     : ""

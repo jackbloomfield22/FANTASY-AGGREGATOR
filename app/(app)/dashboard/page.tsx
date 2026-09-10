@@ -8,7 +8,7 @@ import { HomePlayersPanel } from "@/components/HomePlayersPanel";
 import { MostLeveragedPanel } from "@/components/MostLeveragedPanel";
 import { ImportantGameCard } from "@/components/NFLGameCard";
 import { LiveFeed } from "@/components/LiveFeed";
-import { kickoffLabel } from "@/lib/utils";
+import { gameKickoffLabel } from "@/lib/utils";
 
 /**
  * The one-stop Sunday page, in a fantasy player's reading order:
@@ -38,7 +38,7 @@ export default function DashboardPage() {
               <p className="rounded-lg border border-edge bg-surface px-3 py-2 text-xs font-medium text-ink-dim">
                 No games in progress. Next kickoff:{" "}
                 <span className="tnum font-bold text-ink">
-                  {nextKickoff.awayTeam} @ {nextKickoff.homeTeam} · {kickoffLabel(nextKickoff.kickoffAt)}
+                  {nextKickoff.awayTeam} @ {nextKickoff.homeTeam} · {gameKickoffLabel(nextKickoff)}
                 </span>
               </p>
             ) : null}

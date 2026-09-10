@@ -68,9 +68,9 @@ export function MostLeveragedPanel({
                   </span>
                   <span className="tnum block text-[10px] leading-tight text-ink-faint">
                     {played
-                      ? `${formatPoints(p.portfolioImpact)} pts across lineups`
-                      : p.projectedImpact > 0
-                        ? `proj ${formatPoints(p.projectedImpact)} across lineups`
+                      ? `${formatPoints(p.pointsPerLineup)} pts per lineup`
+                      : p.projectedPerLineup
+                        ? `proj ${formatPoints(p.projectedPerLineup)} per lineup`
                         : `of ${p.totalLeagues} leagues`}
                   </span>
                 </span>

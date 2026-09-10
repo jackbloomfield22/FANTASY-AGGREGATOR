@@ -72,6 +72,32 @@ describe("normalizeScheduleGame", () => {
     expect(g.homeTeam).toBe("KC");
     expect(g.awayTeam).toBe("BUF");
   });
+
+  it("marks a date-only kickoff as time-unknown instead of inventing a time", () => {
+    const g = normalizeScheduleGame(
+      { home: "KC", away: "BUF", status: "pre_game", date: "2026-09-13" },
+      1
+    )!;
+    expect(g.kickoffTimeKnown).toBe(false);
+    expect(g.kickoffDate).toBe("2026-09-13");
+    expect(g.kickoffAt.startsWith("2026-09-13")).toBe(true);
+  });
+
+  it("keeps a real kickoff timestamp (epoch millis or ISO) as time-known", () => {
+    const epoch = Date.UTC(2026, 8, 13, 17, 0, 0);
+    const fromEpoch = normalizeScheduleGame(
+      { home: "KC", away: "BUF", status: "pre_game", start_time: epoch },
+      1
+    )!;
+    expect(fromEpoch.kickoffTimeKnown).toBe(true);
+    expect(fromEpoch.kickoffAt).toBe(new Date(epoch).toISOString());
+
+    const fromIso = normalizeScheduleGame(
+      { home: "KC", away: "BUF", status: "pre_game", date: "2026-09-13T17:00:00Z" },
+      1
+    )!;
+    expect(fromIso.kickoffTimeKnown).toBe(true);
+  });
 });
 
 describe("normalizeSchedulePayload", () => {

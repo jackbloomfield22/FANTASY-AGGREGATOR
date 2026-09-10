@@ -8,8 +8,9 @@ import type {
   PortfolioPlayer,
   PortfolioSnapshot,
   RankedGame,
+  RawStatLine,
 } from "@/lib/types";
-import { calculateFantasyPoints, round1 } from "@/lib/scoring/engine";
+import { calculateFantasyPoints, round1, SCORING_PRESETS } from "@/lib/scoring/engine";
 import { benchPoints, portfolioImpact, rosterExposure, starterExposure } from "./exposure";
 import { exposureLevel, gameImportanceScore } from "./importance";
 import { estimateWinProbability } from "./winProbability";
@@ -93,11 +94,26 @@ export function aggregatePortfolio(snapshot: PortfolioSnapshot): AggregatedPortf
     else contextsByPlayer.set(slot.playerId, [ctx]);
   }
 
+  // One lineup's worth of points: leagues usually agree; when their rules
+  // differ, the PPR-scored line is the representative number (owner call —
+  // a per-lineup figure always beats an unhelpful cross-league total).
+  const perLineup = (values: number[], raw: RawStatLine | null): number => {
+    if (values.length === 0) return 0;
+    const distinct = new Set(values.map((v) => round1(v)));
+    if (distinct.size === 1) return round1(values[0]);
+    if (!raw) return round1(Math.max(...values));
+    return round1(calculateFantasyPoints(raw, SCORING_PRESETS.ppr));
+  };
+
   const players: PortfolioPlayer[] = [];
   for (const [playerId, contexts] of contextsByPlayer) {
     const player = playerById.get(playerId)!;
     const game = gameByNflTeam.get(player.nflTeam) ?? null;
     const stats = statsByPlayer.get(playerId)?.stats ?? null;
+    const projLineRaw = projByPlayer.get(playerId)?.stats ?? null;
+    const projVals = contexts
+      .map((c) => c.projectedPoints)
+      .filter((v): v is number => v !== null);
     const starterCount = contexts.filter((c) => c.isStarter).length;
     players.push({
       player,
@@ -115,6 +131,8 @@ export function aggregatePortfolio(snapshot: PortfolioSnapshot): AggregatedPortf
       projectedImpact: round1(
         contexts.reduce((s, c) => s + (c.isStarter ? c.projectedPoints ?? 0 : 0), 0)
       ),
+      pointsPerLineup: perLineup(contexts.map((c) => c.points), stats),
+      projectedPerLineup: projVals.length > 0 ? perLineup(projVals, projLineRaw) : null,
       benchPoints: benchPoints(contexts),
       maxPoints: contexts.reduce((m, c) => Math.max(m, c.points), 0),
       liveStatus: playerLiveStatus(game, player, {

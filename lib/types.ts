@@ -137,6 +137,11 @@ export interface NormalizedNFLGame {
   distance: number | null;
   redZone: boolean;
   kickoffAt: string; // ISO
+  /** False when the schedule source only supplied a calendar date — the
+   *  time portion of kickoffAt is then a placeholder and must not be shown. */
+  kickoffTimeKnown?: boolean;
+  /** Calendar date (YYYY-MM-DD) from the schedule source, when known. */
+  kickoffDate?: string | null;
   /** Short drive description, e.g. "7 plays · 62 yds · 3:12" */
   driveSummary: string | null;
   updatedAt: string;
@@ -293,8 +298,14 @@ export interface PortfolioPlayer {
   starterExposure: number; // 0..1
   /** Sum of points across leagues where the user STARTS this player. */
   portfolioImpact: number;
-  /** Sum of PROJECTED points across leagues where the user starts him. */
+  /** Sum of PROJECTED points across leagues where the user starts him (used
+   *  for ranking/leverage math — display per-lineup numbers, not this). */
   projectedImpact: number;
+  /** What he scores in ONE lineup — league-scored; when leagues disagree on
+   *  rules, PPR-scored as the representative number. */
+  pointsPerLineup: number;
+  /** Projection for ONE lineup — same convention as pointsPerLineup. */
+  projectedPerLineup: number | null;
   /** Sum of points across bench slots — shown separately, never mixed in. */
   benchPoints: number;
   /** Max single-league points (for display when not starting anywhere). */

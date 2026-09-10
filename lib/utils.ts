@@ -32,7 +32,7 @@ export function gamePhaseLabel(game: NormalizedNFLGame): string {
       if (game.quarter === null && game.clock === null) return "Live";
       return `${QUARTER_LABEL[game.quarter ?? 1] ?? `Q${game.quarter}`} · ${game.clock ?? ""}`.trim();
     case "scheduled":
-      return kickoffLabel(game.kickoffAt);
+      return gameKickoffLabel(game);
   }
 }
 
@@ -40,6 +40,21 @@ export function kickoffLabel(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "Upcoming";
   return d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+}
+
+/**
+ * Kickoff label that respects what the schedule source actually knows: the
+ * clock time when it's real, otherwise just the day — never a fake time
+ * derived from a date-only schedule entry.
+ */
+export function gameKickoffLabel(game: NormalizedNFLGame): string {
+  if (game.kickoffTimeKnown === false) {
+    const src = game.kickoffDate ? `${game.kickoffDate}T12:00:00Z` : game.kickoffAt;
+    const d = new Date(src);
+    if (Number.isNaN(d.getTime())) return "Upcoming";
+    return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+  }
+  return kickoffLabel(game.kickoffAt);
 }
 
 export function timeAgo(iso: string | null, nowMs = Date.now()): string {

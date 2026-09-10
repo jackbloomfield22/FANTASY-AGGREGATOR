@@ -105,6 +105,8 @@ describe("aggregatePortfolio projections", () => {
     expect(ppr.projectedPoints).toBe(20); // 6 rec + 8 yd pts + 6 td
     expect(std.projectedPoints).toBe(14); // no reception points
     expect(wr.projectedImpact).toBe(34); // both slots are starters
+    // Per-lineup representative: leagues disagree -> PPR-scored projection.
+    expect(wr.projectedPerLineup).toBe(20);
     // No projection line for the RB -> null, and impact 0.
     const rb = agg.players.find((p) => p.player.id === "p-rb")!;
     expect(rb.leagues[0].projectedPoints).toBeNull();
