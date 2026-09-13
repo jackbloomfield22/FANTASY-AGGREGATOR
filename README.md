@@ -104,7 +104,7 @@ Simulated live stats are **never** mixed into real fantasy data: with Sleeper co
 | Route | Purpose |
 | --- | --- |
 | `/` | Landing (redirects into the app when a session exists — to `/live` on game days, `/dashboard` otherwise) |
-| `/live` | **Live window** — the couch view: TNF / SUN 1PM / SUN 4PM / SNF / MNF tabs, the games in that window with live score + clock, and every player you roster in each (starters-only toggle) |
+| `/live` | **Live** — your composite starting lineup for the week: every player you start in any league, grouped by position and sorted by points, with the leagues he's in on each row and live game status; a scoreboard strip of games in progress on top (starters / all-rostered toggle) |
 | `/lineup` | **Lineup Check** — injured starters across all leagues (worst designation first, nav badge for Out/Doubtful/IR) and a start/sit pass flagging bench players who out-project a starter in an eligible slot |
 | `/dashboard` | Your Sunday: summary, most important game, biggest swing, live alerts, matchup strip |
 | `/players`, `/players/[id]` | Portfolio player list (filters/sort) and player detail |
