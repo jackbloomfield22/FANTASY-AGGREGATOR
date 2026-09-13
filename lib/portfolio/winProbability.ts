@@ -9,31 +9,29 @@
 export interface WinProbabilityInput {
   userScore: number;
   opponentScore: number;
+  /** Expected FINAL scores: points already banked + remaining projection. */
   userProjected: number;
   opponentProjected: number;
+  /** Game-time still to be played, summed over starters (1 = a full game). */
   userPlayersRemaining: number;
   opponentPlayersRemaining: number;
   matchupComplete: boolean;
 }
+
+/** Roughly one starter's full-game fantasy standard deviation. */
+const SIGMA_PER_STARTER_GAME = 7.5;
 
 export function estimateWinProbability(input: WinProbabilityInput): number {
   if (input.matchupComplete) {
     return input.userScore > input.opponentScore ? 1 : input.userScore < input.opponentScore ? 0 : 0.5;
   }
 
-  // Blend current margin with projected margin, weighted by how much of the
-  // matchup is still outstanding.
-  const remainingTotal = input.userPlayersRemaining + input.opponentPlayersRemaining;
-  const projWeight = Math.min(1, remainingTotal / 10); // more players left -> trust projections more
-  const currentMargin = input.userScore - input.opponentScore;
-  const projectedMargin = input.userProjected - input.opponentProjected;
-  const blendedMargin = currentMargin * (1 - projWeight) + projectedMargin * projWeight;
-
-  // Uncertainty scales with players remaining; ~12 fantasy points of sigma
-  // per outstanding starter is a rough but sane MVP figure.
-  const sigma = Math.max(6, Math.sqrt(Math.max(1, remainingTotal)) * 9);
-  const z = blendedMargin / sigma;
-  const p = cdf(z);
+  // The expected-final margin already blends what's banked with what's
+  // left; uncertainty comes only from the game-time still outstanding.
+  const remainingTotal = Math.max(0, input.userPlayersRemaining + input.opponentPlayersRemaining);
+  const margin = input.userProjected - input.opponentProjected;
+  const sigma = Math.max(2.5, SIGMA_PER_STARTER_GAME * Math.sqrt(remainingTotal));
+  const p = cdf(margin / sigma);
   return clamp(p, 0.01, 0.99);
 }
 

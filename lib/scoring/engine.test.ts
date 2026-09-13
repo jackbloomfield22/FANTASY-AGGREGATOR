@@ -79,3 +79,13 @@ describe("classifyScoring", () => {
     expect(classifyScoring({ rec: 0.75 })).toBe("custom");
   });
 });
+
+describe("Sleeper-shaped kicker lines", () => {
+  it("does not double-count field goals when the line carries both fgm and distance buckets", () => {
+    // Sleeper stat lines include the flat total AND the buckets; only the
+    // buckets may score against bucket-based settings.
+    const line: RawStatLine = { fgm: 2, fgm_20_29: 1, fgm_40_49: 1, xpm: 3 };
+    const settings = { fgm_0_19: 3, fgm_20_29: 3, fgm_30_39: 3, fgm_40_49: 4, fgm_50p: 5, xpm: 1 };
+    expect(calculateFantasyPoints(line, settings)).toBe(10); // 3 + 4 + 3, not 16
+  });
+});

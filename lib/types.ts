@@ -290,6 +290,8 @@ export interface PlayerLeagueContext {
   points: number;
   /** Projected points under THIS league's scoring settings (null if unknown). */
   projectedPoints: number | null;
+  /** True once his game is final — a 0 is then a real 0, not "yet to play". */
+  gameFinal: boolean;
 }
 
 /** The fully-joined portfolio view of one canonical player. */

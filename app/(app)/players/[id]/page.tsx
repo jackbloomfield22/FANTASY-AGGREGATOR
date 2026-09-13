@@ -225,7 +225,7 @@ export default function PlayerDetailPage({ params }: { params: Promise<{ id: str
                             >
                               {ctx.isStarter ? "STARTING" : "BENCH"}
                             </span>
-                            {ctx.points === 0 && ctx.projectedPoints ? (
+                            {ctx.points === 0 && !ctx.gameFinal && ctx.projectedPoints ? (
                               <span className="tnum text-sm font-medium text-ink-faint">
                                 proj {formatPoints(ctx.projectedPoints)}
                               </span>

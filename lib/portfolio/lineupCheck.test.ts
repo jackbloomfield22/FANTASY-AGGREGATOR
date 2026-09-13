@@ -9,7 +9,7 @@ const game: NormalizedNFLGame = {
 };
 
 function ctx(leagueId: string, isStarter: boolean, slot: string, projectedPoints: number | null): PlayerLeagueContext {
-  return { leagueId, leagueName: leagueId, scoringType: "ppr", isStarter, slot, points: 0, projectedPoints };
+  return { leagueId, leagueName: leagueId, scoringType: "ppr", isStarter, slot, points: 0, projectedPoints, gameFinal: false };
 }
 
 function player(

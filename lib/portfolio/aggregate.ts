@@ -75,7 +75,8 @@ export function aggregatePortfolio(snapshot: PortfolioSnapshot): AggregatedPortf
     const player = playerById.get(slot.playerId);
     if (!player) continue;
     const stats = statsByPlayer.get(slot.playerId)?.stats ?? null;
-    const projLine = projByPlayer.get(slot.playerId)?.stats ?? null;
+    // A starter who won't play projects to zero, whatever the feed says.
+    const projLine = willNotPlay(player) ? null : projByPlayer.get(slot.playerId)?.stats ?? null;
     const ctx: PlayerLeagueContext = {
       leagueId: league.id,
       leagueName: league.name,
@@ -85,9 +86,12 @@ export function aggregatePortfolio(snapshot: PortfolioSnapshot): AggregatedPortf
       points: stats
         ? calculateFantasyPoints(stats, league.scoringSettings)
         : slot.providerPoints ?? 0,
-      projectedPoints: projLine
-        ? round1(calculateFantasyPoints(projLine, league.scoringSettings))
-        : null,
+      projectedPoints: willNotPlay(player)
+        ? 0
+        : projLine
+          ? round1(calculateFantasyPoints(projLine, league.scoringSettings))
+          : null,
+      gameFinal: gameByNflTeam.get(player.nflTeam)?.status === "final",
     };
     const list = contextsByPlayer.get(slot.playerId);
     if (list) list.push(ctx);
@@ -176,29 +180,55 @@ export function aggregatePortfolio(snapshot: PortfolioSnapshot): AggregatedPortf
     const opponentTeam = teamById.get(raw.opponentTeamId);
     if (!league || !userTeam || !opponentTeam) continue;
 
-    const scoreFor = (teamId: string): { score: number; remaining: number; allFinal: boolean } => {
+    const scoreFor = (
+      teamId: string
+    ): { score: number; remaining: number; remainingWeight: number; allFinal: boolean; expected: number | null } => {
       const slots = snapshot.rosterSlots.filter(
         (s) => s.fantasyTeamId === teamId && s.isStarter
       );
       let score = 0;
       let remaining = 0;
+      let remainingWeight = 0;
+      let expected = 0;
+      let projected = 0;
       let allFinal = slots.length > 0;
       for (const slot of slots) {
         const player = playerById.get(slot.playerId);
         const stats = player ? statsByPlayer.get(player.id)?.stats ?? null : null;
-        score += stats
+        const actual = stats
           ? calculateFantasyPoints(stats, league.scoringSettings)
           : slot.providerPoints ?? 0;
+        score += actual;
         // Bye week / free agent (no game this week): nothing left to play, so
         // don't count toward "remaining" or block the matchup going final.
         const game = player ? gameByNflTeam.get(player.nflTeam) : undefined;
-        if (!player || (snapshot.games.length > 0 && !game)) continue;
-        if (!game || game.status !== "final") {
+        if (!player || (snapshot.games.length > 0 && !game)) {
+          expected += actual;
+          continue;
+        }
+        const left = gameRemainingFraction(game ?? null, stats !== null);
+        if (left > 0) {
           allFinal = false;
           remaining += 1;
+          remainingWeight += left;
+        }
+        // Expected final: what's banked plus the unplayed share of his projection.
+        const projLine = projByPlayer.get(player.id)?.stats ?? null;
+        if (projLine && !willNotPlay(player)) {
+          projected += 1;
+          expected += actual + calculateFantasyPoints(projLine, league.scoringSettings) * left;
+        } else {
+          if (projLine) projected += 1; // known: he's out, so his projection is a real 0
+          expected += actual;
         }
       }
-      return { score: round1(score), remaining, allFinal };
+      return {
+        score: round1(score),
+        remaining,
+        remainingWeight,
+        allFinal,
+        expected: projected > 0 ? round1(expected) : null,
+      };
     };
 
     const user = scoreFor(raw.userTeamId);
@@ -208,16 +238,20 @@ export function aggregatePortfolio(snapshot: PortfolioSnapshot): AggregatedPortf
     const userScore = hasStats ? user.score : raw.userScore;
     const opponentScore = hasStats ? opp.score : raw.opponentScore;
     const complete = raw.status === "final" || (hasStats && user.allFinal && opp.allFinal);
+    // Projected = expected FINAL score (banked points + remaining projection),
+    // falling back to the provider's number when no projections exist.
+    const userProjected = complete ? userScore : (user.expected ?? raw.userProjected);
+    const opponentProjected = complete ? opponentScore : (opp.expected ?? raw.opponentProjected);
 
     const winProbability =
       raw.winProbability ??
       estimateWinProbability({
         userScore,
         opponentScore,
-        userProjected: raw.userProjected,
-        opponentProjected: raw.opponentProjected,
-        userPlayersRemaining: user.remaining,
-        opponentPlayersRemaining: opp.remaining,
+        userProjected,
+        opponentProjected,
+        userPlayersRemaining: user.remainingWeight,
+        opponentPlayersRemaining: opp.remainingWeight,
         matchupComplete: complete,
       });
 
@@ -230,7 +264,7 @@ export function aggregatePortfolio(snapshot: PortfolioSnapshot): AggregatedPortf
           : "tossup";
 
     matchups.push({
-      matchup: { ...raw, userScore, opponentScore, winProbability, status },
+      matchup: { ...raw, userScore, opponentScore, userProjected, opponentProjected, winProbability, status },
       league,
       userTeam,
       opponentTeam,
@@ -274,6 +308,36 @@ export function aggregatePortfolio(snapshot: PortfolioSnapshot): AggregatedPortf
     })[0] ?? null;
 
   return { players, games, matchups, summary, mostImportantGame, biggestSwing };
+}
+
+/** Out / IR / suspended: no projection should count for him this week. */
+export function willNotPlay(player: NormalizedPlayer): boolean {
+  return player.injury === "out" || player.injury === "ir" || player.injury === "suspended";
+}
+
+/**
+ * How much of a player's game is still to be played, 0..1. Uses the quarter
+ * and clock when the feed supplies them; a live game without a clock counts
+ * as half over. With no schedule at all, stats presence is the only signal.
+ */
+export function gameRemainingFraction(game: NormalizedNFLGame | null, hasStats: boolean): number {
+  if (!game) return hasStats ? 0.5 : 1;
+  switch (game.status) {
+    case "scheduled":
+      return 1;
+    case "final":
+      return 0;
+    case "halftime":
+      return 0.5;
+    case "live": {
+      if (game.quarter === null) return 0.5;
+      const [m, sec] = (game.clock ?? "").split(":").map(Number);
+      const minutesLeftInQuarter = Number.isFinite(m) ? m + (Number.isFinite(sec) ? sec / 60 : 0) : 7.5;
+      const quartersLeft = Math.max(0, 4 - Math.min(game.quarter, 4));
+      const left = (quartersLeft * 15 + Math.min(15, minutesLeftInQuarter)) / 60;
+      return Math.min(0.95, Math.max(0.05, left));
+    }
+  }
 }
 
 export function playerLiveStatus(

@@ -33,7 +33,7 @@ interface LineupEntry {
   gameLabel: string;
   statLine: string;
   points: number;
-  /** League-scored projection — shown faintly while points are still 0. */
+  /** League-scored projection — shown faintly until he has points or his game is final. */
   projectedPoints: number | null;
   status: PlayerLiveStatus;
 }
@@ -184,7 +184,7 @@ function DuelRow({ mine, theirs }: { mine?: LineupEntry; theirs?: LineupEntry })
         <span className={cn("tnum block text-sm font-black leading-tight", myPts >= theirPts ? "text-ink" : "text-ink-faint")}>
           {formatPoints(myPts)}
         </span>
-        {mine && myPts === 0 && mine.projectedPoints ? (
+        {mine && myPts === 0 && mine.status !== "final" && mine.projectedPoints ? (
           <span className="tnum block text-[9px] font-medium leading-tight text-ink-faint">
             proj {formatPoints(mine.projectedPoints)}
           </span>
@@ -197,7 +197,7 @@ function DuelRow({ mine, theirs }: { mine?: LineupEntry; theirs?: LineupEntry })
         <span className={cn("tnum block text-sm font-black leading-tight", theirPts >= myPts ? "text-ink" : "text-ink-faint")}>
           {formatPoints(theirPts)}
         </span>
-        {theirs && theirPts === 0 && theirs.projectedPoints ? (
+        {theirs && theirPts === 0 && theirs.status !== "final" && theirs.projectedPoints ? (
           <span className="tnum block text-[9px] font-medium leading-tight text-ink-faint">
             proj {formatPoints(theirs.projectedPoints)}
           </span>
@@ -234,7 +234,7 @@ function BenchList({ title, rows, mirrored }: { title: string; rows: LineupEntry
               </span>
               <span className="shrink-0 text-right">
                 <span className="tnum block text-xs font-bold text-ink-dim">{formatPoints(r.points)}</span>
-                {r.points === 0 && r.projectedPoints ? (
+                {r.points === 0 && r.status !== "final" && r.projectedPoints ? (
                   <span className="tnum block text-[9px] text-ink-faint">proj {formatPoints(r.projectedPoints)}</span>
                 ) : null}
               </span>

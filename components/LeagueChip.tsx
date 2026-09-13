@@ -38,7 +38,7 @@ export function LeagueChip({ context, className }: { context: PlayerLeagueContex
         {context.isStarter ? "START" : "BENCH"}
       </span>
       <span className="max-w-[9rem] truncate">{context.leagueName}</span>
-      {context.points === 0 && context.projectedPoints ? (
+      {context.points === 0 && !context.gameFinal && context.projectedPoints ? (
         <span className="tnum font-medium text-ink-faint">proj {formatPoints(context.projectedPoints)}</span>
       ) : (
         <span className="tnum font-bold text-ink">{formatPoints(context.points)}</span>
@@ -85,7 +85,7 @@ export function LeagueScoreChips({
             {c.isStarter ? "START" : "BN"}
           </span>
           <span className="max-w-[7.5rem] truncate">{c.leagueName}</span>
-          {c.points === 0 && c.projectedPoints ? (
+          {c.points === 0 && !c.gameFinal && c.projectedPoints ? (
             <span className="tnum text-ink-faint">proj {formatPoints(c.projectedPoints)}</span>
           ) : (
             <span className="tnum font-bold text-ink">{formatPoints(c.points)}</span>

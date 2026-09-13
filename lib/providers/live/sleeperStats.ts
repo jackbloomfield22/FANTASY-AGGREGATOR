@@ -169,10 +169,12 @@ export function normalizeScheduleGame(raw: Json, week: number): NormalizedNFLGam
   };
 }
 
-/** Stat keys that aren't raw football stats (points, ranks, meta). */
+/** Stat keys that aren't raw football stats (fantasy-point totals, ranks,
+ *  meta). NOTE: `pts_allow` / `pts_allow_7_13` are real D/ST stats — keep them. */
+const FANTASY_POINT_KEYS = /^pts_(ppr|half_ppr|std|idp|.*_ppr|.*_std)$/;
 function isRawStatKey(key: string): boolean {
   return !(
-    key.startsWith("pts_") ||
+    FANTASY_POINT_KEYS.test(key) ||
     key.startsWith("rank_") ||
     key.startsWith("pos_rank_") ||
     key.startsWith("adp_") ||

@@ -174,3 +174,13 @@ describe("normalizeScheduleGame — scores feed detail", () => {
     expect(g.homeScore).toBe(31);
   });
 });
+
+describe("normalizeWeekStats — D/ST keys", () => {
+  it("keeps points-allowed stats while dropping fantasy-point totals", () => {
+    const out = normalizeWeekStats(
+      { SEA: { pts_allow: 17, pts_allow_14_20: 1, sack: 3, int: 1, pts_ppr: 9, pts_std: 9 } },
+      new Set(["SEA"])
+    );
+    expect(out.get("SEA")).toEqual({ pts_allow: 17, pts_allow_14_20: 1, sack: 3, int: 1 });
+  });
+});

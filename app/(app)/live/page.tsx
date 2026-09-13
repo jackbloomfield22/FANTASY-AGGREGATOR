@@ -76,7 +76,7 @@ function gameLabel(p: PortfolioPlayer): React.ReactNode {
 }
 
 function LineupRow({ p, startersOnly }: { p: PortfolioPlayer; startersOnly: boolean }) {
-  const scored = p.stats !== null || p.pointsPerLineup > 0;
+  const scored = p.stats !== null || p.pointsPerLineup > 0 || p.liveStatus === "final";
   const contexts = startersOnly ? p.leagues.filter((l) => l.isStarter) : p.leagues;
   // Show per-league values only when leagues disagree (different scoring).
   const values = new Set(

@@ -32,7 +32,7 @@ export function calculateFantasyPoints(
     // Distance-agnostic FG totals (some live providers report only a flat
     // "fgm") against leagues that score by distance bucket: fall back to the
     // most conservative bucket value rather than dropping the kicks entirely.
-    if (perUnit === undefined && key === "fgm") {
+    if (perUnit === undefined && key === "fgm" && !hasBucketedFg(stats)) {
       perUnit = flatFgFallback(settings);
     }
     if (perUnit === undefined || perUnit === 0) continue;
@@ -42,6 +42,12 @@ export function calculateFantasyPoints(
 }
 
 const FG_BUCKET_KEYS = ["fgm_0_19", "fgm_20_29", "fgm_30_39", "fgm_40_49", "fgm_50p"];
+
+/** Sleeper's stat lines carry BOTH a flat fgm total and the distance buckets —
+ *  the buckets are the scored ones, so the flat total must not count again. */
+function hasBucketedFg(stats: RawStatLine): boolean {
+  return FG_BUCKET_KEYS.some((k) => (stats[k] ?? 0) !== 0);
+}
 
 function flatFgFallback(settings: ScoringSettings): number | undefined {
   const bucketValues = FG_BUCKET_KEYS.map((k) => settings[k]).filter(

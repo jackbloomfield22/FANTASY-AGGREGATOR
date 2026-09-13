@@ -128,9 +128,13 @@ async function buildSleeperSnapshot(
         const game = gameByTeam.get(player.nflTeam);
         const gameId = game?.id ?? `slg-w${sync.week}-${player.nflTeam}`;
         const stats = weekStats.get(sleeperId);
-        if (stats) playerStats.push({ playerId: player.id, gameId, stats, updatedAt });
+        if (stats) {
+          playerStats.push({ playerId: player.id, gameId, stats: withPositionBonuses(stats, player), updatedAt });
+        }
         const proj = projections.get(sleeperId);
-        if (proj) projectionStats.push({ playerId: player.id, gameId, stats: proj, updatedAt });
+        if (proj) {
+          projectionStats.push({ playerId: player.id, gameId, stats: withPositionBonuses(proj, player), updatedAt });
+        }
       }
 
       liveSource = "sleeper";
@@ -168,6 +172,19 @@ async function buildSleeperSnapshot(
     projections: projectionStats,
     alerts,
   };
+}
+
+/**
+ * TE-premium style settings (`bonus_rec_te`, `bonus_rec_rb`, `bonus_rec_wr`)
+ * score per reception by position. Sleeper's stat lines usually carry these
+ * keys; when a line has receptions but no bonus key, derive it so those
+ * leagues aren't undercounted.
+ */
+const POSITION_REC_BONUS: Record<string, string> = { TE: "bonus_rec_te", RB: "bonus_rec_rb", WR: "bonus_rec_wr" };
+export function withPositionBonuses(line: RawStatLine, player: NormalizedPlayer): RawStatLine {
+  const key = POSITION_REC_BONUS[player.position];
+  if (!key || !line.rec || line[key] !== undefined) return line;
+  return { ...line, [key]: line.rec };
 }
 
 /**

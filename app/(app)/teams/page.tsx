@@ -34,11 +34,13 @@ export default function TeamsPage() {
               subtitle={
                 matchups.length > 0 ? (
                   <span className="tnum">
-                    {matchups.length} matchups · {wins} projected wins · {losses} projected losses ·
-                    overall projected record{" "}
+                    {matchups.length} matchups · projected record{" "}
                     <strong className="text-ink">
                       {wins}–{losses}
                     </strong>
+                    {matchups.length - wins - losses > 0
+                      ? ` · ${matchups.length - wins - losses} toss-up${matchups.length - wins - losses === 1 ? "" : "s"}`
+                      : ""}
                   </span>
                 ) : undefined
               }

@@ -175,3 +175,86 @@ describe("aggregatePortfolio without a schedule (degraded mode)", () => {
     expect(agg.players.find((p) => p.player.id === "p-wr")!.liveStatus).toBe("no_game");
   });
 });
+
+describe("matchup projections are expected FINAL scores", () => {
+  const baseGame = {
+    id: "g1",
+    providerGameId: "g1",
+    week: 1,
+    homeTeam: "SEA",
+    awayTeam: "DAL",
+    homeScore: 0,
+    awayScore: 0,
+    quarter: null,
+    clock: null,
+    possessionTeam: null,
+    ballYardLine: null,
+    down: null,
+    distance: null,
+    redZone: false,
+    kickoffAt: new Date().toISOString(),
+    driveSummary: null,
+    updatedAt: new Date().toISOString(),
+  } as const;
+
+  const withMatchup = (status: "scheduled" | "live" | "final", stats: boolean) =>
+    makeSnapshot({
+      fantasyTeams: [
+        { id: "T1", leagueId: "L1", providerRosterId: "1", name: "Me", ownerName: "me", isUserTeam: true },
+        { id: "O1", leagueId: "L1", providerRosterId: "2", name: "Opp", ownerName: "opp", isUserTeam: false },
+      ],
+      rosterSlots: [
+        { id: "s1", fantasyTeamId: "T1", leagueId: "L1", playerId: "p-wr", slot: "WR", isStarter: true, week: 1 },
+        { id: "s2", fantasyTeamId: "O1", leagueId: "L1", playerId: "p-rb", slot: "RB", isStarter: true, week: 1 },
+      ],
+      matchups: [
+        {
+          id: "m1", leagueId: "L1", week: 1, userTeamId: "T1", opponentTeamId: "O1",
+          userScore: 0, opponentScore: 0, userProjected: 0, opponentProjected: 0, winProbability: null, status: "tossup",
+        },
+      ],
+      games: [{ ...baseGame, status }],
+      projections: [
+        { playerId: "p-wr", gameId: "g1", stats: { rec: 6, rec_yd: 80, rec_td: 1 }, updatedAt: "" }, // 20 in L1
+        { playerId: "p-rb", gameId: "g1", stats: { rec_yd: 50 }, updatedAt: "" }, // 5 in L1
+      ],
+      playerStats: stats
+        ? [{ playerId: "p-wr", gameId: "g1", stats: { rec: 10, rec_yd: 150, rec_td: 2 }, updatedAt: "" }] // 37
+        : [],
+    });
+
+  it("equals the projection before kickoff", () => {
+    const m = aggregatePortfolio(withMatchup("scheduled", false)).matchups[0].matchup;
+    expect(m.userProjected).toBe(20);
+    expect(m.opponentProjected).toBe(5);
+    expect(m.winProbability!).toBeGreaterThan(0.5);
+  });
+
+  it("adds banked points to the remaining projection while live", () => {
+    const m = aggregatePortfolio(withMatchup("live", true)).matchups[0].matchup;
+    expect(m.userScore).toBe(37);
+    expect(m.userProjected).toBe(47); // 37 banked + half of the 20 projection (no clock -> half over)
+    expect(m.userProjected).toBeGreaterThan(m.userScore);
+  });
+
+  it("equals the actual score once final", () => {
+    const m = aggregatePortfolio(withMatchup("final", true)).matchups[0].matchup;
+    expect(m.userProjected).toBe(37);
+    expect(m.status).toBe("final");
+    expect(m.winProbability).toBe(1);
+  });
+});
+
+describe("starters who will not play", () => {
+  it("project to zero even when the feed still carries a projection", () => {
+    const snap = makeSnapshot({
+      projections: [
+        { playerId: "p-wr", gameId: "g", stats: { rec: 6, rec_yd: 80, rec_td: 1 }, updatedAt: "" },
+      ],
+    });
+    snap.players[0].injury = "out";
+    const wr = aggregatePortfolio(snap).players.find((p) => p.player.id === "p-wr")!;
+    expect(wr.leagues.every((l) => l.projectedPoints === 0)).toBe(true);
+    expect(wr.projectedImpact).toBe(0);
+  });
+});
