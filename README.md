@@ -103,7 +103,9 @@ Simulated live stats are **never** mixed into real fantasy data: with Sleeper co
 
 | Route | Purpose |
 | --- | --- |
-| `/` | Landing (redirects into the app when a session exists) |
+| `/` | Landing (redirects into the app when a session exists — to `/live` on game days, `/dashboard` otherwise) |
+| `/live` | **Live window** — the couch view: TNF / SUN 1PM / SUN 4PM / SNF / MNF tabs, the games in that window with live score + clock, and every player you roster in each (starters-only toggle) |
+| `/lineup` | **Lineup Check** — injured starters across all leagues (worst designation first, nav badge for Out/Doubtful/IR) and a start/sit pass flagging bench players who out-project a starter in an eligible slot |
 | `/dashboard` | Your Sunday: summary, most important game, biggest swing, live alerts, matchup strip |
 | `/players`, `/players/[id]` | Portfolio player list (filters/sort) and player detail |
 | `/teams`, `/teams/[id]` | Matchup list and full matchup detail (both lineups, league scoring) |
@@ -137,7 +139,7 @@ Auth/entry is enforced in `proxy.ts` (Next.js middleware): protected routes requ
 | --- | --- |
 | Demo fantasy + demo live simulation | ✅ fully working, default |
 | Sleeper (fantasy) | ✅ real, public API: username → leagues, rosters, starters/bench, matchups, per-league scoring, external player IDs |
-| Sleeper (live layer) | ✅ real weekly player stat lines, projections and game statuses from Sleeper's public stats/schedule endpoints — scored locally per league; no key needed. (No clock/possession/field position — that's Sportradar.) |
+| Sleeper (live layer) | ✅ real weekly player stat lines, projections, injury designations and game statuses from Sleeper's public stats/scores/schedule endpoints — scored locally per league; no key needed. Live score, quarter and clock come from the scores feed when it answers. (Field position — ball yard line, down & distance — is Sportradar.) |
 | Sportradar NFL v7 | ✅ implemented, enabled by `SPORTRADAR_API_KEY` (verify endpoint payloads against your account's tier) |
 | Supabase auth + schema | ✅ implemented, enabled by env vars; full RLS in migrations |
 | Yahoo | 🟡 provider skeleton + OAuth URL builder; token exchange/import to be completed when credentials exist |

@@ -14,6 +14,7 @@ import {
   FantasySyncResult,
   FantasyUser,
 } from "./base";
+import { mapSleeperInjury } from "./sleeperInjury";
 
 /**
  * Sleeper fantasy provider — real integration against Sleeper's documented
@@ -157,6 +158,7 @@ function normalizePlayerEntry(sleeperId: string, entry: SleeperPlayerEntry | und
         : entry.status === "Active"
           ? "active"
           : "unknown";
+  const { injury, injuryLabel } = mapSleeperInjury(entry.status, entry.injury_status);
   return {
     id: canonicalId(sleeperId),
     firstName: entry.first_name ?? "",
@@ -165,6 +167,8 @@ function normalizePlayerEntry(sleeperId: string, entry: SleeperPlayerEntry | und
     position,
     nflTeam: entry.team ?? "FA",
     status,
+    injury,
+    injuryLabel,
     providerIds,
   };
 }

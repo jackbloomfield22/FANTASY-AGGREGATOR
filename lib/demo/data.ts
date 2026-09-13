@@ -440,7 +440,7 @@ export const USER_PLAYER_DEFS: UserPlayerDef[] = [
   { name: "Toby Lockhart", pos: "K", team: "SF", leagues: { "lg-work": "S", "lg-family": "S" } },
   { name: "Isaiah Crowe", pos: "RB", team: "BAL", leagues: { "lg-office": "B", "lg-dynasty": "S" } },
   { name: "Kellen Ash", pos: "WR", team: "CIN", leagues: { "lg-degens": "S", "lg-family": "S" } },
-  { name: "Micah Boone", pos: "WR", team: "DET", leagues: { "lg-work": "S" } },
+  { name: "Micah Boone", pos: "WR", team: "DET", leagues: { "lg-work": "S" }, flexIn: ["lg-work"] },
   { name: "Lamont Frey", pos: "RB", team: "MIN", leagues: { "lg-degens": "B", "lg-work": "B" } },
   { name: "Cyrus Bell", pos: "TE", team: "MIN", leagues: { "lg-dynasty": "B", "lg-family": "S" } },
 ];
@@ -593,13 +593,24 @@ const OPP_FULL_LINES: Record<string, RawStatLine> = {
   [pid("Dax Loman")]: { xpm: 3, fgm_30_39: 2, fgm_50p: 1 },
 };
 
+/** Weekly injury report for the demo world (fictional players). */
+const DEMO_INJURIES: Record<string, { injury: NormalizedPlayer["injury"]; label: string }> = {
+  "Toby Lockhart": { injury: "out", label: "OUT" },
+  "Kellen Ash": { injury: "doubtful", label: "D" },
+  "Micah Boone": { injury: "questionable", label: "Q" },
+  "Cyrus Bell": { injury: "questionable", label: "Q" },
+  "August Kane": { injury: "ir", label: "IR" },
+};
+
 export const DEMO_PLAYERS: NormalizedPlayer[] = [
   ...USER_PLAYER_DEFS.map((d) => defToPlayer(d.name, d.pos, d.team)),
   ...OPP_DEFS.map((d) => defToPlayer(d.name, d.pos, d.team)),
 ];
 
+
 function defToPlayer(name: string, pos: Position, team: string): NormalizedPlayer {
   const [first, ...rest] = name.split(" ");
+  const report = DEMO_INJURIES[name];
   return {
     id: pid(name),
     firstName: first,
@@ -607,7 +618,9 @@ function defToPlayer(name: string, pos: Position, team: string): NormalizedPlaye
     fullName: name,
     position: pos,
     nflTeam: team,
-    status: "active",
+    status: report?.injury === "out" || report?.injury === "ir" ? "out" : report ? "questionable" : "active",
+    injury: report?.injury ?? null,
+    injuryLabel: report?.label ?? null,
     providerIds: { demo: pid(name) },
   };
 }

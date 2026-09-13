@@ -20,6 +20,9 @@ export type ProviderId = "sleeper" | "yahoo" | "espn" | "demo";
 
 export type LiveProviderId = "sportradar" | "sleeper" | "demo" | "none";
 
+/** Injury/availability designation, worst first when sorted by INJURY_SEVERITY. */
+export type InjuryDesignation = "ir" | "suspended" | "out" | "doubtful" | "questionable";
+
 // ---------------------------------------------------------------------------
 // Canonical player
 // ---------------------------------------------------------------------------
@@ -37,6 +40,10 @@ export interface NormalizedPlayer {
   position: Position;
   nflTeam: string; // team abbreviation, e.g. "LAR"
   status: "active" | "injured" | "out" | "questionable" | "unknown";
+  /** Current injury/availability designation, null when fully available. */
+  injury?: InjuryDesignation | null;
+  /** Provider's own label for the designation (e.g. "PUP", "Q"). */
+  injuryLabel?: string | null;
   providerIds: {
     sleeper?: string;
     sportradar?: string;

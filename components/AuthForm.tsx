@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { defaultLandingPath } from "@/lib/landing";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
@@ -51,7 +52,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        router.push("/dashboard");
+        router.push(defaultLandingPath());
       }
       router.refresh();
     } catch (err) {

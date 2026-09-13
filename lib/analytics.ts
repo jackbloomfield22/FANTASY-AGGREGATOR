@@ -17,6 +17,8 @@ export type AnalyticsEvent =
   | "teams_viewed"
   | "matchup_opened"
   | "games_viewed"
+  | "live_viewed"
+  | "lineup_viewed"
   | "game_opened"
   | "filter_used"
   | "manual_refresh"

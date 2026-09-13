@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { defaultLandingPath } from "@/lib/landing";
 import { PageHeader } from "@/components/PageHeader";
 import { SleeperConnectCard } from "@/components/SleeperConnectCard";
 
@@ -28,7 +29,7 @@ export default function OnboardingPage() {
         subtitle="Step 1 — link the platforms where you play. Sleeper works today; more are on the way."
       />
 
-      <SleeperConnectCard onConnected={() => router.push("/dashboard")} />
+      <SleeperConnectCard onConnected={() => router.push(defaultLandingPath())} />
       <ComingSoonProvider name="ESPN" note="No supported public API yet — we don't scrape or fake it." />
       <ComingSoonProvider name="Yahoo" note="OAuth integration lands once credentials are configured." />
       <ComingSoonProvider name="NFL Fantasy" note="Planned after Yahoo." />

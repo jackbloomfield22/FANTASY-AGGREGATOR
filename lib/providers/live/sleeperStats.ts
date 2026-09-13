@@ -15,9 +15,9 @@ import { LiveProviderError, LiveSportsProvider } from "./base";
  * (pass_yd, rec, rec_td, …), which is exactly what the local scoring engine
  * consumes — so every league's own settings produce real fantasy points.
  *
- * What this provider CAN'T supply (Sportradar territory): live scores,
- * game clock, possession and field position. Those fields stay null and the
- * UI degrades gracefully.
+ * Live score, quarter, clock and possession come from Sleeper's scores feed
+ * when it answers; field position (ball yard line, down & distance) is
+ * Sportradar territory and stays null here. The UI degrades gracefully.
  */
 
 const HOST = "https://api.sleeper.app";
@@ -58,17 +58,37 @@ export function canonTeam(team: string | undefined | null): string | null {
 }
 
 function normalizeGameStatus(status: unknown): GameStatus {
-  switch (String(status ?? "")) {
+  switch (String(status ?? "").toLowerCase()) {
     case "in_game":
     case "in_progress":
+    case "live":
       return "live";
+    case "halftime":
+    case "half":
+      return "halftime";
     case "complete":
     case "completed":
     case "post_game":
+    case "final":
       return "final";
     default:
       return "scheduled";
   }
+}
+
+/** Sleeper's scores feed nests live detail under `metadata`; read both. */
+function pick(raw: Json, keys: string[]): unknown {
+  const meta = raw?.metadata && typeof raw.metadata === "object" ? raw.metadata : {};
+  for (const k of keys) {
+    if (raw?.[k] !== undefined && raw?.[k] !== null) return raw[k];
+    if (meta?.[k] !== undefined && meta?.[k] !== null) return meta[k];
+  }
+  return undefined;
+}
+
+/** A real kickoff never lands on exactly midnight UTC — that's a date-only value. */
+function isMidnightUtc(d: Date): boolean {
+  return d.getUTCHours() === 0 && d.getUTCMinutes() === 0 && d.getUTCSeconds() === 0;
 }
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- external payloads parsed defensively */
@@ -86,29 +106,42 @@ export function normalizeScheduleGame(raw: Json, week: number): NormalizedNFLGam
   let kickoffAt = new Date().toISOString();
   let kickoffTimeKnown = false;
   let kickoffDate: string | null = null;
-  for (const cand of [raw?.start_time, raw?.kickoff, raw?.date]) {
+  const dateOnly = (ymd: string) => {
+    kickoffDate = ymd;
+    kickoffTimeKnown = false;
+    // Placeholder instant for chronological ordering only (~1pm ET).
+    kickoffAt = `${ymd}T17:00:00.000Z`;
+  };
+  const timestamp = (d: Date) => {
+    if (isMidnightUtc(d)) dateOnly(d.toISOString().slice(0, 10));
+    else {
+      kickoffAt = d.toISOString();
+      kickoffTimeKnown = true;
+    }
+  };
+  for (const cand of [pick(raw, ["start_time", "kickoff", "scheduled"]), raw?.date]) {
     if (typeof cand === "number" && Number.isFinite(cand) && cand > 1e9) {
       const d = new Date(cand > 1e12 ? cand : cand * 1000);
       if (!Number.isNaN(d.getTime())) {
-        kickoffAt = d.toISOString();
-        kickoffTimeKnown = true;
+        timestamp(d);
         break;
       }
     } else if (typeof cand === "string" && cand) {
       if (/^\d{4}-\d{2}-\d{2}$/.test(cand)) {
-        kickoffDate = cand;
-        // Placeholder instant for chronological ordering only (~1pm ET).
-        kickoffAt = `${cand}T17:00:00.000Z`;
+        dateOnly(cand);
         break;
       }
       const d = new Date(cand);
       if (!Number.isNaN(d.getTime())) {
-        kickoffAt = d.toISOString();
-        kickoffTimeKnown = true;
+        timestamp(d);
         break;
       }
     }
   }
+  const live = status === "live" || status === "halftime";
+  const quarterRaw = live ? Number(pick(raw, ["quarter_num", "quarter", "period"])) : NaN;
+  const clockRaw = live ? pick(raw, ["time_remaining", "clock", "game_clock"]) : undefined;
+  const possession = live ? canonTeam(String(pick(raw, ["possession", "possession_team"]) ?? "")) : null;
   const num = (v: unknown): number => (typeof v === "number" && Number.isFinite(v) ? v : 0);
   return {
     id: `slg-${raw?.game_id ?? `${away}-${home}-${week}`}`,
@@ -116,14 +149,14 @@ export function normalizeScheduleGame(raw: Json, week: number): NormalizedNFLGam
     week,
     homeTeam: home,
     awayTeam: away,
-    homeScore: num(raw?.home_score ?? raw?.home_points),
-    awayScore: num(raw?.away_score ?? raw?.away_points),
+    homeScore: num(Number(pick(raw, ["home_score", "home_points"]) ?? 0)),
+    awayScore: num(Number(pick(raw, ["away_score", "away_points"]) ?? 0)),
     status,
-    // Sleeper's schedule has no clock/possession detail — those need a
-    // dedicated live provider (Sportradar).
-    quarter: null,
-    clock: null,
-    possessionTeam: null,
+    // Sleeper's scores feed carries quarter/clock/possession while a game is
+    // on; its plain schedule feed doesn't. Field position needs Sportradar.
+    quarter: Number.isFinite(quarterRaw) && quarterRaw > 0 ? quarterRaw : null,
+    clock: typeof clockRaw === "string" && clockRaw ? clockRaw : null,
+    possessionTeam: possession,
     ballYardLine: null,
     down: null,
     distance: null,
@@ -207,7 +240,7 @@ export function normalizeSchedulePayload(raw: Json, week: number): NormalizedNFL
 // ---------------------------------------------------------------------------
 
 const STATE_TTL = 5 * 60 * 1000;
-const SCHEDULE_TTL = 60 * 1000;
+const SCHEDULE_TTL = 30 * 1000;
 const STATS_TTL = 30 * 1000; // live-ish during games
 const PROJECTIONS_TTL = 30 * 60 * 1000;
 
@@ -227,6 +260,8 @@ export class SleeperStatsLiveProvider implements LiveSportsProvider {
     // Sleeper's schedule lives at an unversioned path whose exact shape has
     // varied; try each known candidate and accept array/object payloads.
     const candidates = [
+      // Scores feed first: real kickoff timestamps plus live score/clock.
+      `/scores/nfl/regular/${season}/${week}`,
       `/schedule/nfl/regular/${season}/${week}`,
       `/v1/schedule/nfl/regular/${season}/${week}`,
       `/schedule/nfl/regular/${season}`,

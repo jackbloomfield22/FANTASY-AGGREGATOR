@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { defaultLandingPath } from "@/lib/landing";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { track } from "@/lib/analytics";
@@ -35,7 +36,7 @@ export function EntryGate() {
         return;
       }
       track("fantasy_connection_completed", { provider: "sleeper", from: "entry" });
-      router.push("/dashboard");
+      router.push(defaultLandingPath());
       router.refresh();
     } catch {
       setError("Network error reaching Sleeper — try again.");

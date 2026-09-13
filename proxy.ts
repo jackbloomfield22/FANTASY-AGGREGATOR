@@ -3,6 +3,8 @@ import { createServerClient } from "@supabase/ssr";
 
 const PROTECTED_PREFIXES = [
   "/dashboard",
+  "/live",
+  "/lineup",
   "/players",
   "/teams",
   "/games",

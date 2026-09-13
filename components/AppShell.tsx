@@ -3,31 +3,66 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Home, Users, Trophy, Tv, Settings, Search, RefreshCw } from "lucide-react";
+import { Home, Users, Trophy, Tv, Settings, Search, RefreshCw, Radio, ClipboardCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePortfolio, useSecondsSinceUpdate } from "@/components/providers/PortfolioProvider";
+import { unavailableStarterCount } from "@/lib/portfolio/lineupCheck";
 import { SearchModal } from "@/components/SearchModal";
 import { LiveIndicator } from "@/components/ui/badges";
 
-const NAV = [
+interface NavItem {
+  href: string;
+  label: string;
+  /** Shorter label for the mobile bottom bar. */
+  short?: string;
+  icon: typeof Home;
+  /** Hidden from the mobile bottom bar (reachable from the mobile header). */
+  desktopOnly?: boolean;
+}
+
+const NAV: NavItem[] = [
+  { href: "/live", label: "Live", icon: Radio },
   { href: "/dashboard", label: "Home", icon: Home },
   { href: "/players", label: "Players", icon: Users },
   { href: "/teams", label: "Teams", icon: Trophy },
-  { href: "/games", label: "NFL Games", icon: Tv },
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/games", label: "NFL Games", short: "Games", icon: Tv },
+  { href: "/lineup", label: "Lineup Check", short: "Lineup", icon: ClipboardCheck },
+  { href: "/settings", label: "Settings", icon: Settings, desktopOnly: true },
 ];
+
+/** Live dot for the Live item, injured-starter count for Lineup Check. */
+function useNavSignals(): { live: boolean; unavailable: number } {
+  const { portfolio } = usePortfolio();
+  return {
+    live: (portfolio?.summary.gamesLive ?? 0) > 0,
+    unavailable: portfolio ? unavailableStarterCount(portfolio.players) : 0,
+  };
+}
+
+function NavBadge({ count, className }: { count: number; className?: string }) {
+  if (count <= 0) return null;
+  return (
+    <span
+      aria-label={`${count} starters out`}
+      className={cn(
+        "tnum inline-flex min-w-[1.1rem] items-center justify-center rounded-full bg-loss px-1 text-[9px] font-black leading-4 text-white",
+        className
+      )}
+    >
+      {count > 9 ? "9+" : count}
+    </span>
+  );
+}
 
 function NavLink({
   href,
   label,
+  short,
   icon: Icon,
   variant,
-}: {
-  href: string;
-  label: string;
-  icon: typeof Home;
-  variant: "side" | "bottom";
-}) {
+  live,
+  badge,
+}: NavItem & { variant: "side" | "bottom"; live?: boolean; badge?: number }) {
   const pathname = usePathname();
   const active = pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
   if (variant === "bottom") {
@@ -42,13 +77,17 @@ function NavLink({
       >
         <span
           className={cn(
-            "flex items-center justify-center rounded-full px-3 py-0.5 transition-colors",
+            "relative flex items-center justify-center rounded-full px-3 py-0.5 transition-colors",
             active && "bg-accent/15"
           )}
         >
           <Icon size={19} strokeWidth={active ? 2.4 : 2} aria-hidden />
+          {live ? (
+            <span aria-hidden className="absolute right-1.5 top-0 h-1.5 w-1.5 rounded-full bg-live" />
+          ) : null}
+          {badge ? <NavBadge count={badge} className="absolute -top-0.5 right-0.5" /> : null}
         </span>
-        {label}
+        {short ?? label}
       </Link>
     );
   }
@@ -66,6 +105,10 @@ function NavLink({
       ) : null}
       <Icon size={17} aria-hidden />
       {label}
+      {live ? (
+        <span aria-label="games in progress" className="live-dot ml-auto inline-block h-1.5 w-1.5 rounded-full bg-live" />
+      ) : null}
+      {badge ? <NavBadge count={badge} className="ml-auto" /> : null}
     </Link>
   );
 }
@@ -119,6 +162,11 @@ function ModeBadge() {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [searchOpen, setSearchOpen] = useState(false);
+  const signals = useNavSignals();
+  const signalsFor = (item: NavItem) => ({
+    live: item.href === "/live" ? signals.live : undefined,
+    badge: item.href === "/lineup" ? signals.unavailable : undefined,
+  });
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -143,7 +191,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </Link>
         <nav aria-label="Primary" className="flex flex-1 flex-col gap-1">
           {NAV.map((item) => (
-            <NavLink key={item.href} {...item} variant="side" />
+            <NavLink key={item.href} {...item} {...signalsFor(item)} variant="side" />
           ))}
         </nav>
         <div className="flex flex-col gap-2 px-1">
@@ -182,6 +230,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           >
             <Search size={15} aria-hidden />
           </button>
+          <Link
+            href="/settings"
+            aria-label="Settings"
+            className="rounded-md border border-edge bg-surface-2 p-1.5 text-ink-dim hover:text-ink"
+          >
+            <Settings size={15} aria-hidden />
+          </Link>
         </div>
       </header>
 
@@ -196,8 +251,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         className="fixed inset-x-0 bottom-0 z-30 flex border-t border-edge bg-surface/95 backdrop-blur md:hidden"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
-        {NAV.map((item) => (
-          <NavLink key={item.href} {...item} variant="bottom" />
+        {NAV.filter((item) => !item.desktopOnly).map((item) => (
+          <NavLink key={item.href} {...item} {...signalsFor(item)} variant="bottom" />
         ))}
       </nav>
 

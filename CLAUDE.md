@@ -34,6 +34,8 @@ npm run build      # production build — must pass before pushing
 - Styling: Tailwind utilities against the design tokens in `app/globals.css` (`bg-surface`, `text-ink-dim`, `text-live`, `redzone-glow`, `tnum`, …). Dark is the default theme; light overrides come from `[data-theme="light"]` + system fallback. Don't hardcode hex colors in components.
 - Status must never be color-only — pair color with text/icon (see `StatusBadge`, `MatchupStatusBadge`).
 - Client pages wrap content in `DataGate` (skeleton → error → data). New pages should follow `app/(app)/players/page.tsx` as the pattern.
-- Session state lives in cookies (`fa-demo`, `fa-demo-epoch`, `fa-sleeper`) — helpers in `lib/server/session.ts`. Route protection in `proxy.ts`.
+- Session state lives in cookies (`fa-demo`, `fa-demo-epoch`, `fa-sleeper`) — helpers in `lib/server/session.ts`. Route protection in `proxy.ts` (add new app routes to `PROTECTED_PREFIXES`).
+- Landing: `lib/landing.ts` decides `/live` (Thu/Sun/Mon in season, Eastern Time) vs `/dashboard`; every "enter the app" redirect goes through `defaultLandingPath()`.
+- Game windows (`lib/portfolio/windows.ts`) and lineup checks (`lib/portfolio/lineupCheck.ts`) are pure functions over the aggregated portfolio — keep them UI-free and unit-tested. Date-only kickoffs (Sleeper's schedule feed) must never be shown as clock times: check `kickoffTimeKnown` / use `gameKickoffLabel`.
 - Analytics: fire-and-forget `track()` from `lib/analytics.ts`; add new event names to its union type.
 - Demo player names are fictional — never introduce real NFL player names into `lib/demo/data.ts`.

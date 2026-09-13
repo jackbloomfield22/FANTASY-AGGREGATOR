@@ -701,6 +701,15 @@ export function buildDemoSnapshot(nowMs: number, epochOffsetMs = 0): PortfolioSn
     if (Object.keys(line).length > 0) statLines.set(player.id, line);
   }
 
+  // Projections: the demo world's full-game lines double as its projections.
+  const projections: NormalizedPlayerGameStats[] = [];
+  for (const player of DEMO_PLAYERS) {
+    const game = gameByTeam.get(player.nflTeam);
+    const line = FULL_LINES[player.id];
+    if (!game || !line || Object.keys(line).length === 0) continue;
+    projections.push({ playerId: player.id, gameId: game.id, stats: line, updatedAt: nowIso });
+  }
+
   const playerStats: NormalizedPlayerGameStats[] = [];
   for (const [playerId, stats] of statLines) {
     const player = DEMO_PLAYERS.find((pl) => pl.id === playerId)!;
@@ -775,7 +784,7 @@ export function buildDemoSnapshot(nowMs: number, epochOffsetMs = 0): PortfolioSn
     matchups: DEMO_MATCHUPS_BASE,
     games: [...games.values()],
     playerStats,
-    projections: [],
+    projections,
     alerts: alerts.slice(0, 16),
   };
 }

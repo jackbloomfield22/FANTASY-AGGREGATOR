@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { defaultLandingPath } from "@/lib/landing";
 import { DEMO_COOKIE } from "@/lib/server/session";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +13,7 @@ const COOKIE_OPTS = {
 
 /** Enter demo mode: sets the demo cookie and lands on the dashboard. */
 export async function GET(request: NextRequest) {
-  const response = NextResponse.redirect(new URL("/dashboard", request.url));
+  const response = NextResponse.redirect(new URL(defaultLandingPath(), request.url));
   response.cookies.set(DEMO_COOKIE, "1", COOKIE_OPTS);
   return response;
 }

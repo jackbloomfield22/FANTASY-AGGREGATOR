@@ -133,3 +133,44 @@ describe("normalizeSchedulePayload", () => {
     expect(normalizeSchedulePayload([{ status: "pre_game" }], 1)).toEqual([]);
   });
 });
+
+describe("normalizeScheduleGame — scores feed detail", () => {
+  it("reads live quarter/clock/scores/possession from metadata", () => {
+    const g = normalizeScheduleGame(
+      {
+        status: "in_game",
+        home: "SEA",
+        away: "LAR",
+        start_time: Date.UTC(2026, 8, 13, 20, 25, 0),
+        metadata: { quarter_num: 3, time_remaining: "8:41", home_score: 20, away_score: 27, possession: "LAR" },
+      },
+      1
+    )!;
+    expect(g.status).toBe("live");
+    expect(g.quarter).toBe(3);
+    expect(g.clock).toBe("8:41");
+    expect(g.homeScore).toBe(20);
+    expect(g.awayScore).toBe(27);
+    expect(g.possessionTeam).toBe("LAR");
+    expect(g.kickoffTimeKnown).toBe(true);
+  });
+
+  it("treats a midnight-UTC timestamp as a date-only kickoff", () => {
+    const g = normalizeScheduleGame(
+      { status: "pre_game", home: "KC", away: "BUF", start_time: Date.UTC(2026, 8, 13, 0, 0, 0) },
+      1
+    )!;
+    expect(g.kickoffTimeKnown).toBe(false);
+    expect(g.kickoffDate).toBe("2026-09-13");
+  });
+
+  it("leaves clock detail null for games that aren't on", () => {
+    const g = normalizeScheduleGame(
+      { status: "complete", home: "KC", away: "BUF", metadata: { quarter_num: 4, time_remaining: "0:00", home_score: 31, away_score: 17 } },
+      1
+    )!;
+    expect(g.quarter).toBeNull();
+    expect(g.clock).toBeNull();
+    expect(g.homeScore).toBe(31);
+  });
+});

@@ -5,20 +5,21 @@ import { getAuthenticatedUser } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { DEMO_COOKIE, SLEEPER_COOKIE } from "@/lib/server/session";
 import { EntryGate } from "@/components/EntryGate";
+import { defaultLandingPath } from "@/lib/landing";
 
 export const dynamic = "force-dynamic";
 
 /**
  * The front door. Anyone without a session lands here and enters through
  * one window: Sleeper username, or demo mode. Existing sessions go straight
- * to the dashboard.
+ * in — to the live window on game days, the dashboard otherwise.
  */
 export default async function LandingPage() {
   const store = await cookies();
   const hasDemo = store.get(DEMO_COOKIE)?.value === "1";
   const hasSleeper = Boolean(store.get(SLEEPER_COOKIE)?.value);
   const user = await getAuthenticatedUser();
-  if (hasDemo || hasSleeper || user) redirect("/dashboard");
+  if (hasDemo || hasSleeper || user) redirect(defaultLandingPath());
 
   const supabaseReady = isSupabaseConfigured();
 
